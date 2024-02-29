@@ -1,8 +1,7 @@
-# Fractal - Jekyll Theme
+# Story - Jekyll Theme
 
-A Jekyll version of the "Fractal" theme by [HTML5 UP](https://html5up.net/).
+A Jekyll version of the "Story" theme by [HTML5 UP](https://html5up.net/).
 
-![Fractal Theme](assets/images/fractal.jpg "Fractal Theme")
 
 # How to Use
 
@@ -12,14 +11,6 @@ and [creating pages](https://jekyllrb.com/docs/pages/).
 
 - **GitLab**: Simply fork this repository and start editing the `_config.yml` file!  
 - **GitHub**: Fork this reposity and create a branch named `gh-pages`, then start editing the `_config.yml` file!
-
-# Issues
-
-If you would like to report a bug, ask a question, request a feature, feel free to do so on [the GitLab repository](https://gitlab.com/andrewbanchich/fractal-jekyll-theme) and I will be more than happy to help!
-
-Alternatively, you can open an issue via email by emailing [incoming+andrewbanchich/fractal-jekyll-theme@incoming.gitlab.com](mailto:incoming+andrewbanchich/fractal-jekyll-theme@incoming.gitlab.com).
-
-The GitHub repository is simply a mirror of the GitLab repository.
 
 # Credits
 
