@@ -6,6 +6,12 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site
 download_button_url: https://gitlab.com/andrewbanchich/fractal-jekyll-theme
 
+collections:
+  projects:
+    sort_by: place
+    order:
+      - therapt.md
+
 # Social settings
 500px_url:
 facebook_url:
