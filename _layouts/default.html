@@ -7,60 +7,68 @@
 -->
 <html>
 
-{% include head.html %}
+	{% include head.html %}
 
-<body id="top">
-
-{% include header.html %}
+	<body class="is-preload">
 
 
-{% for singleCollection in site.collections %}
-{% if  singleCollection.label == "projects" %}
-{% assign projectDir = singleCollection.relative_directory %}
-{% endif %}
-{% endfor %}
 
-{%for project in site.projects%}
-{% assign mod = forloop.index | modulo: 2 %}
-{% if forloop.index == 1 %}
-<section class="banner style1 orient-left content-align-left image-position-right fullscreen onload-image-fade-in onload-content-fade-right">
-	<div class="content">
-        {%if project.title %}
-		<h1>{{ project.title }}</h1>
-        {% endif %}
-		<p class="major">{{ project.content }}</p>
-		<ul class="actions stacked">
-			<li><a href="#first" class="button big wide smooth-scroll-middle">Get Started</a></li>
-		</ul>
+	{% for singleCollection in site.collections %}
+	{% if  singleCollection.label == "projects" %}
+	{% assign projectDir = singleCollection.relative_directory %}
+	{% endif %}
+	{%if singleCollection.label == "gallery" %}
+	{% assign galleryDir = singleCollection.relative_directory %}
+	{% endif %}
+	{% endfor %}
+
+	<!-- Wrapper -->
+	<div id="wrapper" class="divided">
+	<!-- Main Grab -->
+	<section class="banner style1 orient-left content-align-left image-position-right fullscreen onload-image-fade-in onload-content-fade-right">
+		<div class="content">
+			<h1>{{ site.title }}</h1>
+			<p class="major">{{ site.description }}</p>
+			<ul class="actions stacked">
+				<li><a href="#first" class="button big wide smooth-scroll-middle">Get Started</a></li>
+			</ul>
+		</div>
+		<div class="image">
+			<img src="assets/images/banner.jpg" alt="" />
+		</div>
+	</section>
+
+	<!---Projects-->
+	{%for project in site.projects%}
+	{% assign mod = forloop.index | modulo: 2 %}
+	{%if mod == 0%}
+	<section class="spotlight style1 orient-left content-align-left image-position-center onscroll-image-fade-in" id="first">
+	{%else%}
+	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in">
+	{%endif%}
+		<div class="content">
+			<h2>{{project.title}}</h2>
+			<p>{{project.content}}</p>
+			<ul class="actions stacked">
+				<li><a href="{{project.link}}" target="_blank" class="button" >Learn More</a></li>
+			</ul>
+		</div>
+		<div class="image">
+			<img src="assets/images/projects/{{ project.title }}.png" alt="" />
+		</div>
+	</section>
+
+	{%endfor%}
+
+	<!-- Gallery -->
+	{% include gallery.html %}
+
 	</div>
-	<a href="{{ project.link }}" class="image">
-		<img src="assets/images/{{ project.title }}.png" alt="" />
-	</a>
-</section>
-{% else %}
-{%if mod == 0%}
-<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in" id="first">
-{%else%}
-<section class="spotlight style1 orient-left content-align-left image-position-center onscroll-image-fade-in">
-{%endif%}
-<div class="content">
-	<h2>Magna etiam feugiat</h2>
-	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi id ante sed ex pharetra lacinia sit amet vel massa. Donec facilisis laoreet nulla eu bibendum. Donec ut ex risus. Fusce lorem lectus, pharetra pretium massa et, hendrerit vestibulum odio lorem ipsum dolor sit amet.</p>
-	<ul class="actions stacked">
-		<li><a href="#" class="button">Learn More</a></li>
-	</ul>
-</div>
-<div class="image">
-	<img src="assets/images/spotlight01.jpg" alt="" />
-</div>
-</section>
-{% endif %}
 
-{%endfor%}
+	{% include download.html %}
 
-{% include download.html %}
-
-{% include footer.html %}
+	{% include footer.html %}
 
 	</body>
+
 </html>

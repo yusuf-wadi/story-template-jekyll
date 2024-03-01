@@ -11,6 +11,10 @@ collections:
     sort_by: place
     order:
       - therapt.md
+  gallery:
+    sort_by: place 
+    order:
+      - item1.md
 
 # Social settings
 500px_url:
