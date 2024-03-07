@@ -14,11 +14,14 @@
 
 
 	{% for singleCollection in site.collections %}
-	{% if  singleCollection.label == "projects" %}
-	{% assign projectDir = singleCollection.relative_directory %}
+	{% if  singleCollection.label == "experience" %}
+	{% assign experienceDir = singleCollection.relative_directory %}
 	{% endif %}
 	{%if singleCollection.label == "gallery" %}
 	{% assign galleryDir = singleCollection.relative_directory %}
+	{% endif %}
+	{%if singleCollection.label =="skills"%}
+	{% assign skillsDir = singleCollection.relative_directory %}
 	{% endif %}
 	{% endfor %}
 
@@ -39,29 +42,40 @@
 	</section>
 
 	<!---Projects-->
-	{%for project in site.projects%}
-	{% assign mod = forloop.index | modulo: 2 %}
-	{%if mod == 0%}
-	<section class="spotlight style1 orient-left content-align-left image-position-center onscroll-image-fade-in" id="first">
-	{%else%}
-	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in">
-	{%endif%}
-		<div class="content">
-			<h2>{{project.title}}</h2>
-			<p>{{project.content}}</p>
-			<ul class="actions stacked">
-				<li><a href="{{project.link}}" target="_blank" class="button" >Learn More</a></li>
-			</ul>
-		</div>
-		<div class="image">
-			<img src="assets/images/projects/{{ project.title }}.png" alt="" />
-		</div>
-	</section>
-
-	{%endfor%}
+	{% include projects.html %}
 
 	<!-- Gallery -->
 	{% include gallery.html %}
+
+	<!-- Skills  -->
+	{% include skills.html %}
+
+	<!-- Get in touch -->
+	<section class="wrapper style1 align-center">
+		<div class="inner medium">
+			<h2>Get in touch</h2>
+			<form method="post" action="#">
+				<div class="fields">
+					<div class="field half">
+						<label for="name">Name</label>
+						<input type="text" name="name" id="name" value="" />
+					</div>
+					<div class="field half">
+						<label for="email">Email</label>
+						<input type="email" name="email" id="email" value="" />
+					</div>
+					<div class="field">
+						<label for="message">Message</label>
+						<textarea name="message" id="message" rows="6"></textarea>
+					</div>
+				</div>
+				<ul class="actions special">
+					<li><input type="submit" name="submit" id="submit" value="Send Message" /></li>
+				</ul>
+			</form>
+
+		</div>
+	</section>
 
 	</div>
 

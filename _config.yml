@@ -7,7 +7,7 @@ url: "" # the base hostname & protocol for your site
 download_button_url: https://gitlab.com/andrewbanchich/fractal-jekyll-theme
 
 collections:
-  projects:
+  experience:
     sort_by: place
     order:
       - therapt.md
@@ -15,6 +15,10 @@ collections:
     sort_by: place 
     order:
       - item1.md
+  skills:
+    sort_by: place
+    order:
+    - skill1.md
 
 # Social settings
 500px_url:
