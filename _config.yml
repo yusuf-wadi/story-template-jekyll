@@ -1,7 +1,7 @@
 # Site settings
 title: Yusuf Wadi
 email: yusufwadi1@gmail.com
-description: My personal website
+description: Neural Engineer
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site
 download_button_url: https://gitlab.com/andrewbanchich/fractal-jekyll-theme
@@ -10,15 +10,15 @@ collections:
   experience:
     sort_by: place
     order:
-      - therapt.md
+      - index.md
   gallery:
     sort_by: place 
     order:
-      - item1.md
+      - index.md
   skills:
     sort_by: place
     order:
-    - skill1.md
+      - index.md
 
 # Social settings
 500px_url:

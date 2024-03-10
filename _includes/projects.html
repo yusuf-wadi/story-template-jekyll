@@ -1,7 +1,13 @@
+<section class="wrapper style1 align-center">
+	<div class="inner">
+		<!--Intro-->
+		<h2>Experience</h2>
+		<p></p>
+	</div>
 {%for project in site.experience%}
 	{% assign mod = forloop.index | modulo: 2 %}
 	{%if forloop.index == 1%}
-		<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in" id="first">
+	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in" id="first">
 	{%elsif mod == 0%}
 	<section class="spotlight style1 orient-left content-align-left image-position-center onscroll-image-fade-in">
 	{%else%}
@@ -15,8 +21,13 @@
 			</ul>
 		</div>
 		<div class="image">
-			<a href="{{project.link}}" target="_blank" ><img src="assets/images/projects/{{ project.title | downcase }}.png" alt="" /></a>
+			{%if project.image_url[0] == true%}
+			<a href="{{project.link}}" target="_blank" ><img src="{{ project.image_url[1] }}" alt="" /></a>
+			{%else%}
+			<a href="{{project.link}}" target="_blank" ><img src="assets/images/projects/{{ project.images }}" alt="" /></a>
+			{%endif%}
 		</div>
 	</section>
+</section>
 
 {%endfor%}
