@@ -1,7 +1,8 @@
 ---
-title: Test item 1
-link: example.com
-image: "01"
+title: TheraPT
+link: https://github.com/yusuf-wadi/therapt
+images:
+- test.jpg
 ---
 
-this is test item 1
+this is a test
