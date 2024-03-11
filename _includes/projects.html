@@ -1,9 +1,9 @@
 <section class="wrapper style1 align-center">
-	<div class="inner">
-		<!--Intro-->
-		<h2>Experience</h2>
-		<p></p>
+	<div class="inner small">
+			<!--Intro-->
+			<h2>Experience</h2>
 	</div>
+</section>
 {%for project in site.experience%}
 	{% assign mod = forloop.index | modulo: 2 %}
 	{%if forloop.index == 1%}
@@ -14,13 +14,21 @@
 	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in">
 	{%endif%}
 		<div class="content">
+			<ul>
+				{%for desc in project.description%}
+				<li>{{desc}}</li>
+				<p></p>
+				{%endfor%}
+			</ul>
+		</div>
+		<div class="content">
 			<h2>{{project.title}}</h2>
 			<p>{{project.content}}</p>
 			<ul class="actions stacked">
 				<li><a href="{{project.link}}" target="_blank" class="button" >Learn More</a></li>
 			</ul>
 		</div>
-		<div class="image">
+		<div class="image fit">
 			{%if project.image_url[0] == true%}
 			<a href="{{project.link}}" target="_blank" ><img src="{{ project.image_url[1] }}" alt="" /></a>
 			{%else%}
@@ -28,6 +36,6 @@
 			{%endif%}
 		</div>
 	</section>
-</section>
+
 
 {%endfor%}
