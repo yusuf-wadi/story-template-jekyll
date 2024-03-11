@@ -1,43 +1,28 @@
+
 <section class="wrapper style1 align-center">
-	<div class="inner small">
-			<!--Intro-->
-			<h2>Experience</h2>
-	</div>
+    <div class="inner">
+        <!--Intro-->
+        <h2>Massa sed condimentum</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi id ante sed ex pharetra lacinia sit amet vel massa. Donec facilisis laoreet nulla eu bibendum. Donec ut ex risus. Fusce lorem lectus, pharetra pretium massa et, hendrerit vestibulum odio lorem ipsum.</p>
+    </div>
+
+    <!-- Gallery -->
+        <div class="gallery style2 medium lightbox onscroll-fade-in">
+            {% for item in site.projects reversed %}
+              {{ item }}
+            <article>
+                <a href="{{item.link}}" target="_blank" class="image">
+                    <img src="assets/images/gallery/{{item.images}}" alt="" />
+                </a>
+                <div class="caption">
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.content }}</p>
+                    <ul class="actions fixed">
+                        <li><span class="button small">Details</span></li>
+                    </ul>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
 </section>
-{%for project in site.experience%}
-	{% assign mod = forloop.index | modulo: 2 %}
-	{%if forloop.index == 1%}
-	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in" id="first">
-	{%elsif mod == 0%}
-	<section class="spotlight style1 orient-left content-align-left image-position-center onscroll-image-fade-in">
-	{%else%}
-	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in">
-	{%endif%}
-		<div class="content">
-			<ul>
-				{%if project.description%}
-				{%for desc in project.description%}
-				<li>{{desc}}</li>
-				<p></p>
-				{%endfor%}
-				{%endif%}
-			</ul>
-		</div>
-		<div class="content">
-			<h2>{{project.title}}</h2>
-			<p>{{project.content}}</p>
-			<ul class="actions stacked">
-				<li><a href="{{project.link}}" target="_blank" class="button" >Learn More</a></li>
-			</ul>
-		</div>
-		<div class="image fit">
-			{%if project.image_url[0] == true%}
-			<a href="{{project.link}}" target="_blank" ><img src="{{ project.image_url[1] }}" alt="" /></a>
-			{%else%}
-			<a href="{{project.link}}" target="_blank" ><img src="assets/images/projects/{{ project.images }}" alt="" /></a>
-			{%endif%}
-		</div>
-	</section>
-
-
-{%endfor%}

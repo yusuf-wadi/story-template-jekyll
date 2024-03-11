@@ -11,7 +11,7 @@ collections:
     sort_by: place
     order:
       - index.md
-  gallery:
+  projects:
     sort_by: place 
     order:
       - index.md

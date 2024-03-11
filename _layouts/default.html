@@ -17,8 +17,8 @@
 	{% if  singleCollection.label == "experience" %}
 	{% assign experienceDir = singleCollection.relative_directory %}
 	{% endif %}
-	{%if singleCollection.label == "gallery" %}
-	{% assign galleryDir = singleCollection.relative_directory %}
+	{%if singleCollection.label == "projects" %}
+	{% assign projectDir = singleCollection.relative_directory %}
 	{% endif %}
 	{%if singleCollection.label =="skills"%}
 	{% assign skillsDir = singleCollection.relative_directory %}
@@ -42,10 +42,10 @@
 	</section>
 
 	<!---Projects-->
-	{% include projects.html %}
+	{% include experience.html %}
 
 	<!-- Gallery -->
-	{% include gallery.html %}
+	{% include projects.html %}
 
 	<!-- Skills  -->
 	{% include skills.html %}

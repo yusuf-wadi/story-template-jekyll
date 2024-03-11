@@ -2,7 +2,8 @@
 title: TheraPT
 link: https://github.com/yusuf-wadi/therapt
 images:
-- test.jpg
+- therapt.png
+
 ---
 
 this is a test
