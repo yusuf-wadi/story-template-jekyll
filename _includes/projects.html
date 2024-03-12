@@ -9,7 +9,6 @@
     <!-- Gallery -->
         <div class="gallery style2 medium lightbox onscroll-fade-in">
             {% for item in site.projects reversed %}
-              {{ item }}
             <article>
                 <a href="{{item.link}}" target="_blank" class="image">
                     {% if item.image_url[0] == true %}
