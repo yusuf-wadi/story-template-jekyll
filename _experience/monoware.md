@@ -2,7 +2,7 @@
 title: Monoware Studios
 link: https://www.monowarestudios.com/
 images:
-- mws.svg
+- mwsvg.svg
 image_url:
 - false
 description:
