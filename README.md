@@ -12,6 +12,8 @@ and [creating pages](https://jekyllrb.com/docs/pages/).
 - **GitLab**: Simply fork this repository and start editing the `_config.yml` file!  
 - **GitHub**: Fork this reposity and create a branch named `gh-pages`, then start editing the `_config.yml` file!
 
+Command in terminal in root dir: `bundle exec jekyll serve`
+
 # Credits
 
 Original README from HTML5 UP:
