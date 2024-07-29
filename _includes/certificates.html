@@ -1,10 +1,10 @@
 <section class="wrapper style1 align-center">
 	<div class="inner small">
 			<!--Intro-->
-			<h2>Experience</h2>
+			<h2>Certificates</h2>
 	</div>
 </section>
-{%for project in site.experience reversed%}
+{%for cert in site.certificates reversed%}
 	{% assign mod = forloop.index | modulo: 2 %}
 	{%if forloop.index == 1%}
 	<section class="spotlight style1 orient-right content-align-left image-position-center onscroll-image-fade-in" id="first">
@@ -15,8 +15,8 @@
 	{%endif%}
 		<div class="content">
 			<ul>
-				{%if project.description%}
-				{%for desc in project.description%}
+				{%if cert.description%}
+				{%for desc in cert.description%}
 				{{desc}}
 				<p></p>
 				{%endfor%}
@@ -24,18 +24,18 @@
 			</ul>
 		</div>
 		<div class="content">
-			<h2>{{project.title}}</h2>
-			<p>{{project.content}}</p>
-			<p>{{project.start_end}}</p>
+			<h2>{{cert.title}}</h2>
+			<p>{{cert.content}}</p>
+			<p>{{cert.start_end}}</p>
 			<ul class="actions stacked">
-				<li><a href="{{project.link}}" target="_blank" class="button" >Learn More</a></li>
+				<li><a href="{{cert.link}}" target="_blank" class="button" >Credential Link</a></li>
 			</ul>
 		</div>
 		<div class="image fit">
-			{%if project.image_url[0] == true%}
-			<a href="{{project.link}}" target="_blank" ><img src="{{ project.image_url[1] }}" alt="" /></a>
+			{%if cert.image_url[0] == true%}
+			<a href="{{cert.link}}" target="_blank" ><img src="{{ cert.image_url[1] }}" alt="" /></a>
 			{%else%}
-			<a href="{{project.link}}" target="_blank" ><img src="assets/images/experience/{{ project.images }}" alt="" /></a>
+			<a href="{{cert.link}}" target="_blank" ><img src="assets/images/certs/{{ cert.images }}" alt="" /></a>
 			{%endif%}
 		</div>
 	</section>

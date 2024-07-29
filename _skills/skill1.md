@@ -1,4 +1,4 @@
 ---
-title: "Skill 1"
+title: "Pytorch"
 ---
-this is skill 1
+Building various neural networks using Pytorch for various projects and competitions.

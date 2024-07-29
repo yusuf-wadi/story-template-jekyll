@@ -7,4 +7,4 @@ image_url:
 - false
 ---
 
-My early rendition of a GPT Chatbot mid-2023
+My early rendition of a GPT Chatbot mid-2022

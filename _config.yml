@@ -19,6 +19,10 @@ collections:
     sort_by: place
     order:
       - index.md
+  certificates:
+    sort_by: place
+    order:
+      - index.md
 
 # Social settings
 500px_url:
