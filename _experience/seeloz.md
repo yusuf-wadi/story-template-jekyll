@@ -9,7 +9,7 @@ image_url:
 description:
 - Building out SQL integration for ETL Seeloz Data Pipeline.
 - Utilzing Ray RLlib to build out a reinforcement learning model for Seeloz's supply chain optimization.
-start_end: 05/2024
+start_end: 05/24-08/24
 ---
 
 **Data Science Intern**
