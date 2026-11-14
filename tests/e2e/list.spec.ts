@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { byTime } from '../../src/list/list'
 
 const content = JSON.parse(readFileSync('content/content.json', 'utf8'))
 // "Now & next" is revealed only through the egg in the 3D view, never in the list.
@@ -112,22 +113,51 @@ test('items are collapsed by default and expand/collapse in place', async ({ pag
   await expect(btn).toHaveAttribute('aria-expanded', 'false')
 })
 
-test('expanding in the list does not earn progress (the 3D view is the only way in)', async ({ page }) => {
+test('the list has no tie to 3D progress: expanding earns none, and earned progress lights nothing', async ({ page }) => {
+  const far = items.filter((i) => i.section === 'craft').at(-1)!.id
+  await page.addInitScript((v) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('cm-progress-v1', JSON.stringify([v])); sessionStorage.setItem('seeded', '1') } }, far)
   await page.goto('/#list')
+  await expect(art(page, far)).toHaveAttribute('data-lit', 'false')
+  await expect(page.locator('[data-read]')).toHaveCount(0)
   const id = items.find((i) => i.section === 'projects')!.id
   await toggle(page, id).click()
   await expect(toggle(page, id)).toHaveAttribute('aria-expanded', 'true')
-  await expect(art(page, id)).toHaveAttribute('data-read', 'false')
-  expect(await page.evaluate(() => localStorage.getItem('cm-progress-v1'))).toBeNull()
-  await page.reload()
-  await expect(art(page, id)).toHaveAttribute('data-read', 'false')
+  expect(await page.evaluate(() => localStorage.getItem('cm-progress-v1'))).toBe(JSON.stringify([far]))
 })
 
-test('progress earned in the graph shows on the list', async ({ page }) => {
-  const id = items.find((i) => i.section === 'research')!.id
-  await page.addInitScript((v) => localStorage.setItem('cm-progress-v1', JSON.stringify([v])), id)
+test('nodes light as items scroll into view, stay lit, and the trace charges to the lowest lit pad', async ({ page }) => {
   await page.goto('/#list')
-  await expect(art(page, id)).toHaveAttribute('data-read', 'true')
+  const first = byTime(items.filter((i) => i.section === 'projects'))[0]!.id
+  await expect(art(page, first)).toHaveAttribute('data-lit', 'true')
+  const research = items.filter((i) => i.section === 'research')
+  const target = research[research.length - 1]!.id
+  await expect(art(page, target)).toHaveAttribute('data-lit', 'false')
+  await art(page, target).evaluate((el: HTMLElement) => el.scrollIntoView({ block: 'center' }))
+  await expect(art(page, target)).toHaveAttribute('data-lit', 'true')
+  // charging lights everything above it in its section
+  for (const i of research) await expect(art(page, i.id)).toHaveAttribute('data-lit', 'true')
+  // the copper fill ends at the lowest lit pad's centre
+  const sec = page.locator('section[data-section="research"]')
+  await expect.poll(() => sec.evaluate((s) => {
+    const pads = s.querySelectorAll('.li[data-lit="true"] .tl-pad')
+    const p = pads[pads.length - 1]!.getBoundingClientRect()
+    const f = s.querySelector('.tl-fill')!.getBoundingClientRect()
+    return Math.abs(f.bottom - (p.top + p.height / 2))
+  })).toBeLessThan(2)
+  // stays lit after scrolling away
+  await page.locator('.list-view').evaluate((el) => { el.scrollTop = 0 })
+  await expect(art(page, target)).toHaveAttribute('data-lit', 'true')
+})
+
+test('every section is a trace with one pad per item, ordered newest first', async ({ page }) => {
+  await page.goto('/#list')
+  for (const s of shownSections) {
+    const sec = page.locator(`section[data-section="${s.id}"]`)
+    const want = byTime(items.filter((i) => i.section === s.id)).map((i) => i.id)
+    await expect(sec.locator('.tl')).toHaveCount(1)
+    await expect(sec.locator('.tl-pad')).toHaveCount(want.length)
+    expect(await sec.locator('article').evaluateAll((as) => as.map((a) => (a as HTMLElement).dataset.item))).toEqual(want)
+  }
 })
 
 test('section bar jumps to a section and highlights the current one', async ({ page }) => {
@@ -142,17 +172,14 @@ test('section bar jumps to a section and highlights the current one', async ({ p
   await expect(bar.locator('[aria-current="true"]')).toHaveCount(1)
   // the bar stays on screen while scrolling
   await expect(bar).toBeInViewport()
+  // at the very bottom the last section is current and every node is lit
+  await page.locator('.list-view').evaluate((el) => { el.scrollTop = el.scrollHeight })
+  await expect(bar.getByRole('link', { name: shownSections.at(-1).title })).toHaveAttribute('aria-current', 'true')
+  await expect(page.locator('article[data-lit="false"]')).toHaveCount(0)
   // scrolling back to the top highlights the first section again
   await page.locator('.list-view').evaluate((el) => { el.scrollTop = 0 })
   await page.locator('#sec-projects').scrollIntoViewIfNeeded()
   await expect(bar.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'true')
-})
-
-test('work is a timeline with one pad per role', async ({ page }) => {
-  await page.goto('/#list')
-  const work = page.locator('section[data-section="work"]')
-  await expect(work.locator('.tl')).toHaveCount(1)
-  await expect(work.locator('.tl-pad')).toHaveCount(items.filter((i) => i.section === 'work').length)
 })
 
 test('mobile 390px: no horizontal page overflow, bar scrolls on its own', async ({ page }) => {

@@ -19,15 +19,14 @@ try { storage = window.localStorage } catch { storage = null }
 
 const root = document.getElementById('app')!
 let content: Content | null = null
-const progress = new Progress(storage)
 try {
   content = validateContent(raw)
-  startApp(root, content, layoutRaw as unknown as Layout, progress, { webgl: hasWebGL() })
+  startApp(root, content, layoutRaw as unknown as Layout, new Progress(storage), { webgl: hasWebGL() })
 } catch (e) {
   // Never ship a blank page: fall back to the plain list, or a plain message if the content itself is broken.
   console.warn('startApp failed; showing the plain list instead.', e)
   root.replaceChildren()
-  if (content) renderList(root, content, { backToBrain: false, progress })
+  if (content) renderList(root, content, { backToBrain: false })
   else {
     const p = document.createElement('p')
     p.className = 'boot-error'

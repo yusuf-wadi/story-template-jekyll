@@ -16,7 +16,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     // Replace, never push: a pushed #list would make Back land on the old hash and get forced forward again.
     const force = () => { if (location.hash !== '#list') history.replaceState(null, '', '#list') }
     force()
-    renderList(root, content, { backToBrain: false, progress })
+    renderList(root, content, { backToBrain: false })
     window.addEventListener('hashchange', force)
     return
   }
@@ -183,7 +183,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     }
     if (left) void scene.exit()
     profile.hide()
-    if (!listRendered) { renderList(listHost, content, { progress }); listRendered = true }
+    if (!listRendered) { renderList(listHost, content); listRendered = true }
     listHost.hidden = false
   }
   window.addEventListener('hashchange', render)

@@ -1,51 +1,59 @@
 import type { Content, Item, SectionId } from '../types'
-import type { Progress } from '../progress'
 import { esc, renderBody, safeHref } from '../reader/card'
 
+const MONTH = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(?![a-z])/i
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+const NOW = /\b(present|now|ongoing|current)\b/i
+const monthKey = (d: Date) => d.getFullYear() * 12 + d.getMonth()
 
-/** Start of a free-text date range as a sortable number (year*12 + month), or null if it names no year. */
-export function startKey(dates: string): number | null {
-  const y = /\b(\d{4})\b/.exec(dates)
-  if (!y) return null
-  const m = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i.exec(dates)
-  const month = m && m.index < y.index ? MONTHS.indexOf(m[1]!.toLowerCase()) : 0
-  return Number(y[1]) * 12 + month
+/**
+ * A free-text date range as month keys (year*12 + month, Jan = 0), or null when it names no year and no "present".
+ * Ranges split on – — & or " - "/" to "; a side without a year borrows the other side's ("May – Aug 2024");
+ * a missing month means Jan for a start and Dec for an end ("2014 – 2022", "2026"); "present"/"Ongoing" is now.
+ */
+export function parseDates(dates: string, now: Date = new Date()): { start: number; end: number } | null {
+  const parts = dates.trim().split(/\s*[–—&]\s*|\s+-\s+|\s+to\s+/i).filter(Boolean)
+  if (!parts.length) return null
+  const first = parts[0]!, last = parts[parts.length - 1]!
+  const year = (p: string) => { const y = /\b(\d{4})\b/.exec(p); return y ? Number(y[1]) : null }
+  const month = (p: string) => { const m = MONTH.exec(p); return m ? MONTHS.indexOf(m[1]!.toLowerCase()) : null }
+  const nowK = monthKey(now)
+  const endIsNow = NOW.test(last)
+  const sy = year(first) ?? (endIsNow ? null : year(last))
+  if (sy === null) return endIsNow ? { start: nowK, end: nowK } : null
+  const start = sy * 12 + (month(first) ?? 0)
+  const end = endIsNow ? nowK : (year(last) ?? sy) * 12 + (month(last) ?? 11)
+  return { start, end: Math.max(start, end) }
 }
 
-/** Newest first by start date; an undated item keeps its place right after the item before it in content order. */
-export function newestFirst<T extends { dates: string }>(items: T[]): T[] {
-  let prev = Infinity
-  const keyed = items.map((it, i) => {
-    const k = startKey(it.dates)
-    if (k !== null) prev = k
-    return { it, k: k ?? prev, i }
-  })
-  return keyed.sort((a, b) => b.k - a.k || a.i - b.i).map((x) => x.it)
+/** Newest first: end date desc, then start date desc; undated items last, in content order. */
+export function byTime<T extends { dates: string }>(items: T[], now: Date = new Date()): T[] {
+  const keyed = items.map((it, i) => ({ it, i, d: parseDates(it.dates, now) }))
+  return keyed.sort((a, b) => {
+    if (!a.d || !b.d) return a.d ? -1 : b.d ? 1 : a.i - b.i
+    return b.d.end - a.d.end || b.d.start - a.d.start || a.i - b.i
+  }).map((x) => x.it)
 }
 
 /** The list never shows "Now & next": those are revealed only through the egg in the 3D view. */
 const HIDDEN: SectionId[] = ['next']
 
-/** Scannable, accessible view of everything: no 3D, works without WebGL. Shows (never earns) 3D progress. */
-export function renderList(root: HTMLElement, content: Content,
-  opts: { backToBrain?: boolean; progress?: Pick<Progress, 'isVisited' | 'onChange'> } = {}): void {
+/** Scannable, accessible view of everything: no 3D, works without WebGL, and no tie to the 3D view's progress. */
+export function renderList(root: HTMLElement, content: Content, opts: { backToBrain?: boolean } = {}): void {
   const { person } = content
-  const { progress } = opts
   const links = (ls: { label: string; url: string }[]) =>
     ls.flatMap((l) => {
       const h = safeHref(l.url)
       return h ? [`<a href="${esc(h)}">${esc(l.label)}</a>`] : []
     }).join('')
 
-  const article = (i: Item, timeline: boolean) => {
+  const article = (i: Item) => {
     const bid = `li-body-${esc(i.id)}`
     return `
-    <article id="${esc(i.id)}" class="li" data-item="${esc(i.id)}" data-read="false">
-      ${timeline ? '<span class="tl-pad" aria-hidden="true"></span>' : ''}
+    <article id="${esc(i.id)}" class="li" data-item="${esc(i.id)}" data-lit="false">
+      <span class="tl-pad" aria-hidden="true"></span>
       <div class="li-head">
-        <span class="li-mark" aria-hidden="true"></span>
-        <h3 class="li-title"><button type="button" class="li-toggle" aria-expanded="false" aria-controls="${bid}">${esc(i.title)}<span class="sr-only li-state"></span></button></h3>
+        <h3 class="li-title"><button type="button" class="li-toggle" aria-expanded="false" aria-controls="${bid}">${esc(i.title)}</button></h3>
         ${i.dates ? `<p class="li-dates">${esc(i.dates)}</p>` : ''}
         <span class="li-chev" aria-hidden="true"></span>
         <p class="li-summary">${esc(i.summary)}</p>
@@ -64,11 +72,10 @@ export function renderList(root: HTMLElement, content: Content,
     return items.length ? [{ s, items }] : []
   })
   const sections = shown.map(({ s, items }) => {
-    const tl = s.id === 'work'
-    const list = (tl ? newestFirst(items) : items).map((i) => article(i, tl)).join('')
+    const list = byTime(items).map(article).join('')
     return `<section class="list-sec" data-section="${s.id}" aria-labelledby="sec-${s.id}">
       <h2 id="sec-${s.id}" tabindex="-1">${esc(s.title)}<span class="list-count" aria-hidden="true">${items.length}</span></h2>
-      ${tl ? `<div class="tl">${list}</div>` : list}
+      <div class="tl"><span class="tl-fill" aria-hidden="true"></span>${list}</div>
     </section>`
   }).join('')
   const bar = shown.map(({ s }) => `<a href="#sec-${s.id}" data-jump="${s.id}">${esc(s.title)}</a>`).join('')
@@ -108,26 +115,45 @@ export function renderList(root: HTMLElement, content: Content,
     setTimeout(() => { btn.textContent = 'Copy' }, 1800)
   })
 
-  // Expand / collapse in place. Reading here is free: progress is earned only in the 3D view.
+  // Expand / collapse in place; the trace fill re-measures since pads move.
   root.querySelectorAll<HTMLButtonElement>('.li-toggle').forEach((t) => {
     t.addEventListener('click', () => {
       const open = t.getAttribute('aria-expanded') !== 'true'
       t.setAttribute('aria-expanded', String(open))
       root.querySelector<HTMLElement>(`#${CSS.escape(t.getAttribute('aria-controls')!)}`)!.hidden = !open
       t.closest('.li')!.classList.toggle('is-open', open)
+      fill()
     })
   })
 
-  // Read markers mirror the graph: hollow ring = unread, filled dot with a blue ring = read.
-  const paint = () => {
-    root.querySelectorAll<HTMLElement>('.li').forEach((a) => {
-      const read = !!progress?.isVisited(a.dataset.item!)
-      a.dataset.read = String(read)
-      a.querySelector('.li-state')!.textContent = read ? ' (read)' : ''
-    })
+  // Each section's trace charges down as you scroll: an item's pad lights once it comes into view (and stays lit),
+  // lighting every pad above it in that section; the copper fill follows the lowest lit pad.
+  const tls = [...root.querySelectorAll<HTMLElement>('.tl')]
+  const fill = () => {
+    for (const tl of tls) {
+      const lit = tl.querySelectorAll<HTMLElement>('.li[data-lit="true"] .tl-pad')
+      const f = tl.querySelector<HTMLElement>('.tl-fill')!
+      const pad = lit[lit.length - 1]
+      if (!pad) { f.style.height = '0px'; continue }
+      const r = pad.getBoundingClientRect()
+      f.style.height = `${Math.max(0, r.top + r.height / 2 - tl.getBoundingClientRect().top - f.offsetTop)}px`
+    }
   }
-  paint()
-  progress?.onChange(paint)
+  const light = (li: HTMLElement) => {
+    const tl = li.closest('.tl')!
+    const all = [...tl.querySelectorAll<HTMLElement>('.li')]
+    for (const x of all.slice(0, all.indexOf(li) + 1)) x.dataset.lit = 'true'
+  }
+  const atBottom = () => root.scrollTop + root.clientHeight >= root.scrollHeight - 4
+  const lightAll = () => root.querySelectorAll<HTMLElement>('.li').forEach((x) => { x.dataset.lit = 'true' })
+  if (typeof IntersectionObserver === 'function') {
+    const lio = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { light(e.target as HTMLElement); lio.unobserve(e.target) }
+      fill()
+    }, { root, rootMargin: '0px 0px -10% 0px' })
+    root.querySelectorAll('.li').forEach((x) => lio.observe(x))
+  } else lightAll()
+  window.addEventListener('resize', fill, { passive: true })
 
   // Section bar: jump without touching the hash router; highlight whichever section is under the bar.
   const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -158,21 +184,28 @@ export function renderList(root: HTMLElement, content: Content,
   }
   if (jumps[0]) setActive(jumps[0].dataset.jump!)
   const secs = [...root.querySelectorAll<HTMLElement>('.list-sec')]
-  /** The section whose top has passed a line just under the bar; the first above it, the last at the very bottom. */
+  const barEl = root.querySelector<HTMLElement>('.list-bar')!
+  /** At the very bottom the last section; otherwise the one whose heading is nearest the top under the bar. */
   const pick = () => {
     if (performance.now() < lockUntil || !secs.length) return
-    const top = root.getBoundingClientRect().top
-    const line = top + root.clientHeight * 0.2
-    const atEnd = root.scrollTop > 0 && root.scrollTop + root.clientHeight >= root.scrollHeight - 2
-    const cur = atEnd ? secs[secs.length - 1]! : [...secs].reverse().find((s) => s.getBoundingClientRect().top <= line) ?? secs[0]!
+    if (root.scrollTop > 0 && atBottom()) return setActive(secs[secs.length - 1]!.dataset.section!)
+    const line = barEl.getBoundingClientRect().bottom + root.clientHeight * 0.15
+    const cur = [...secs].reverse().find((s) => s.querySelector('h2')!.getBoundingClientRect().top <= line) ?? secs[0]!
     setActive(cur.dataset.section!)
   }
   if (typeof IntersectionObserver === 'function') {
     // A thin band just under the sticky bar: a section crossing it changes which one is current.
-    const io = new IntersectionObserver(pick, { root, rootMargin: '-15% 0px -80% 0px' })
+    const io = new IntersectionObserver(pick, { root, rootMargin: '-10% 0px -75% 0px' })
     secs.forEach((s) => io.observe(s))
   }
-  // The last sections may never reach the band, so the very bottom also counts; a finished jump re-reads once.
-  root.addEventListener('scroll', () => { if (root.scrollTop + root.clientHeight >= root.scrollHeight - 2) pick() }, { passive: true })
-  root.addEventListener('scrollend', () => { lockUntil = 0; pick() })
+  // The last sections may never reach the band, so reaching the bottom also lights every node and picks the last.
+  const onBottom = () => {
+    if (!atBottom() || root.scrollTop <= 0) return
+    lightAll()
+    fill()
+    pick()
+  }
+  root.addEventListener('scroll', onBottom, { passive: true })
+  // A jump keeps its own target as current once it lands; the next scroll re-reads.
+  root.addEventListener('scrollend', () => { lockUntil = 0 })
 }
