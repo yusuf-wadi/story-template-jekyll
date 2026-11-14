@@ -457,8 +457,8 @@
       "section": "worlds",
       "title": "Liminal Bevy",
       "dates": "Oct 2026",
-      "summary": "A passion project: a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL, and my first large project built with agentic workflows.",
-      "body": "Liminal Bevy is a passion project, and the first large-scale project I have built with agentic workflows. I directed the design and the system, and most of the code was written by AI agents.\n\nThe game grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.",
+      "summary": "A passion project: a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL. I wrote the story, made the designs and designed the architecture.",
+      "body": "Liminal Bevy is a passion project. I wrote the story, I made the designs, I designed the architecture, and every design choice was mine. It is also my first large-scale build with agentic workflows: AI agents wrote the code to my design.\n\nThe game grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.",
       "tags": [
         "Rust",
         "Bevy",
