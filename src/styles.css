@@ -1,4 +1,4 @@
-:root { --region-rest: 0.05; --region-hover: 0.3; --fg: #fff; }
+:root { --region-rest: 0.05; --fg: #fff; }
 html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-family: system-ui, sans-serif; }
 #app { height: 100%; }
 [hidden] { display: none !important; }
@@ -12,8 +12,9 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .stage svg { width: 100%; height: 100%; display: block; }
 .head-outline { fill: url(#head-glass-fill); fill-opacity: .022; stroke: url(#head-glass-rim); stroke-width: 1.5; }
 .head-streak { fill: url(#head-glass-streak); stroke: none; pointer-events: none; }
-.region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
-.region:hover, .region.is-hover { fill-opacity: var(--region-hover); }
+.region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s, stroke .2s, stroke-opacity .2s, filter .2s; }
+/* Hover lights the board's edge in trace blue; the fill stays put so half-wired copper never greys out. */
+.region:hover, .region.is-hover { stroke: var(--trace-hi); stroke-opacity: .85; filter: drop-shadow(0 0 4px rgb(var(--trace-rgb) / .55)); }
 .region:focus-visible { stroke-opacity: 1; stroke-width: 3; }
 .writing-mark { position: absolute; left: 0; top: 57%; width: 17%; aspect-ratio: 2; display: block; color: var(--fg); text-decoration: none; outline: none; transition: transform .2s; }
 .writing-mark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -74,7 +75,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .pcb-hole { fill: #050605; }
 .pcb-edge-copper { fill: var(--trace); fill-opacity: .25; stroke: var(--trace); stroke-opacity: .5; stroke-width: .8; transition: fill-opacity .6s, fill .6s; }
 .region.is-pcb { fill: var(--mask); fill-opacity: .55; stroke: var(--trace); stroke-opacity: .55; transition: fill-opacity .8s, fill .8s; }
-.region.is-pcb:hover, .region.is-pcb.is-hover { fill-opacity: .8; }
+.region.is-pcb:hover, .region.is-pcb.is-hover { fill-opacity: .8; stroke: var(--trace-hi); stroke-opacity: .85; }
 .pcb.is-pcb .pcb-relief { stroke-opacity: 0; }
 .pcb.is-pcb .pcb-chip { stroke-opacity: .7; }
 .pcb.is-pcb .pcb-silk { stroke-opacity: .45; }

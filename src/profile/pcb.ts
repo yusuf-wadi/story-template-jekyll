@@ -23,6 +23,9 @@ const P = 6 // grid pitch (source units)
 const MARGIN = 7 // keep copper this far inside the outline
 const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]] as const
 const NEIGHBOR_DIST = 50
+/** Routing cost of a 45° / 90° turn (in grid steps): high enough that traces run long and straight, no short jogs. */
+const TURN_45 = 4
+const TURN_90 = 8
 
 export function seedFor(id: string): number {
   let h = 2166136261
@@ -255,7 +258,7 @@ export function generatePcb(regionPath: SVGPathElement, itemIds: string[], seed:
           if (!inGrid(ni, nj) || blockedFor(t, ni, nj)) continue
           if (ddx && ddy && (!isSafe(ci + ddx, cj) || !isSafe(ci, cj + ddy))) continue
           const step = ddx && ddy ? Math.SQRT2 : 1
-          const nd = d + step + (turn === 0 ? 0 : Math.abs(turn) === 1 ? 0.8 : 3)
+          const nd = d + step + (turn === 0 ? 0 : Math.abs(turn) === 1 ? TURN_45 : TURN_90)
           const ns = (nj * W + ni) * 8 + nh
           if (nd < dist[ns]) { dist[ns] = nd; prev[ns] = s; push(nd, ns) }
         }
