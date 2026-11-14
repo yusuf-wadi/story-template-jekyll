@@ -1,32 +1,46 @@
 // Cursor-as-light: a radial rim gradient on each glass outline follows the pointer, easing back to the static rim on leave.
+// The eye is a second light: once the egg's eye is open, the rim nearest it picks up a faint, static electric-blue fill
+// (the cursor stays the neutral key light). It breathes with the eye in CSS only, so it costs nothing per frame.
+import { EYE } from '../egg/layout'
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
 interface Lit { grad: SVGRadialGradientElement; path: SVGElement; toLocal(sx: number, sy: number): [number, number] }
 
+/** Head source coordinates -> stage fraction (HEAD_TRANSFORM: scale .88 into an 800 viewBox). */
+const headToStage = (x: number, y: number): [number, number] => [(x * 0.88 - 74.8) / 800, (y * 0.88 - 38.3) / 800]
+/** How far the eye's light reaches, in head units. */
+const EYE_REACH = 260
+
 export function mountLight(stage: HTMLElement): void {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   const headSvg = stage.querySelector<SVGSVGElement>(':scope > svg')
   const bubble = stage.querySelector<SVGSVGElement>('.writing-mark svg')
   const headG = headSvg?.querySelector<SVGGElement>(':scope > g')
   if (!headSvg || !bubble || !headG) return
 
   const lit: Lit[] = []
-  const add = (svg: SVGSVGElement, src: SVGPathElement, id: string, r: number, toLocal: Lit['toLocal'], host: Element) => {
+  const eyeLit: Lit[] = []
+  const rim = (svg: SVGSVGElement, src: SVGPathElement, id: string, r: number, color: string, stops: number[][], cls: string, host: Element) => {
     const defs = svg.querySelector('defs')!
     const grad = document.createElementNS(SVG_NS, 'radialGradient')
     grad.id = id
     grad.setAttribute('gradientUnits', 'userSpaceOnUse')
     grad.setAttribute('r', String(r))
-    for (const [o, a] of [[0, 0.95], [0.3, 0.45], [0.7, 0.1], [1, 0]]) {
+    for (const [o, a] of stops) {
       const s = document.createElementNS(SVG_NS, 'stop')
-      s.setAttribute('offset', String(o)); s.setAttribute('stop-color', '#fff'); s.setAttribute('stop-opacity', String(a))
+      s.setAttribute('offset', String(o)); s.setAttribute('stop-color', color); s.setAttribute('stop-opacity', String(a))
       grad.append(s)
     }
     defs.append(grad)
     const path = src.cloneNode() as SVGPathElement
-    path.setAttribute('class', 'lit-rim'); path.removeAttribute('id'); path.style.stroke = `url(#${id})`
+    path.setAttribute('class', cls); path.removeAttribute('id'); path.style.stroke = `url(#${id})`
     host.insertBefore(path, src.nextSibling)
-    lit.push({ grad, path, toLocal })
+    return { grad, path }
+  }
+  const add = (svg: SVGSVGElement, src: SVGPathElement, id: string, r: number, toLocal: Lit['toLocal'], host: Element) => {
+    // The eye's cool fill sits under the cursor's key light.
+    eyeLit.push({ ...rim(svg, src, `${id}-eye`, 1, '#6fd8ff', [[0, 0.7], [0.3, 0.38], [0.7, 0.1], [1, 0]], 'eye-rim', host), toLocal })
+    if (!reduced) lit.push({ ...rim(svg, src, id, r, '#fff', [[0, 0.95], [0.3, 0.45], [0.7, 0.1], [1, 0]], 'lit-rim', host), toLocal })
   }
 
   const headOutline = headG.querySelector<SVGPathElement>('.head-outline')!
@@ -46,6 +60,29 @@ export function mountLight(stage: HTMLElement): void {
   const measure = () => { rect = stage.getBoundingClientRect(); bub = bubble.getBoundingClientRect() }
   addEventListener('resize', measure)
   addEventListener('scroll', measure, { passive: true })
+
+  // The eye light: centred on the eye, with the same reach in every outline's own units. Placed once per show/resize.
+  let eyeOn = false
+  function placeEye() {
+    if (!eyeOn) return
+    measure()
+    if (!bub.width) return // hidden: placed when it shows (the observer below)
+    const [ex, ey] = headToStage(EYE.x, EYE.y)
+    const [rx] = headToStage(EYE.x + EYE_REACH, EYE.y)
+    for (const l of eyeLit) {
+      const [x, y] = l.toLocal(ex, ey)
+      const r = Math.hypot(l.toLocal(rx, ey)[0] - x, l.toLocal(rx, ey)[1] - y)
+      l.grad.setAttribute('cx', x.toFixed(1)); l.grad.setAttribute('cy', y.toFixed(1)); l.grad.setAttribute('r', r.toFixed(1))
+    }
+  }
+  addEventListener('egg-eye', (e) => {
+    eyeOn = !!(e as CustomEvent<{ open: boolean }>).detail?.open
+    placeEye()
+    for (const l of eyeLit) l.path.classList.toggle('is-on', eyeOn)
+  })
+  // Showing the profile (or resizing) changes the bubble's box: re-place the eye light then.
+  new ResizeObserver(placeEye).observe(bubble)
+  if (reduced) return
 
   let tx = 0, ty = 0, cx = 0, cy = 0, on = false, raf = 0
   const frame = () => {
