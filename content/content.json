@@ -53,7 +53,7 @@
       "title": "TinyNeRF and Instant-NGP in tinygrad",
       "dates": "Aug 2024",
       "summary": "I reimplemented TinyNeRF and Instant-NGP's multiresolution hash encoding inside tinygrad, a minimal deep-learning framework.",
-      "body": "I wanted to understand NeRF below the level of a library call, so I rebuilt it in tinygrad. The model has per-level hash tables with spatial hashing, density and color MLPs, positional encoding, volume rendering and LAMB optimization, with a JIT-compiled render path.\n\ntinygrad was missing several ops I needed, so I wrote them: a 5-D bilinear `grid_sample`, `roll`, an exclusive `cumprod` and `meshgrid`, plus a small data loader.\n\nTinyNeRF trained and rendered novel views. The Instant-NGP model ran end to end on synthetic data; scaling it to larger real datasets was still open when I stopped. It pairs with my ACM NeRF benchmarking study, and it is the project where I did the framework-level work myself.",
+      "body": "I wanted to understand NeRF below the level of a library call, so I rebuilt it in tinygrad. The model has per-level hash tables with spatial hashing, density and color MLPs, positional encoding, volume rendering and LAMB optimization, with a JIT-compiled render path.\n\ntinygrad was missing several ops I needed, so I wrote them: a 5-D bilinear `grid_sample`, `roll`, an exclusive `cumprod` and `meshgrid`, plus a small data loader.\n\nTinyNeRF trained and rendered novel views, and the Instant-NGP model ran end to end on synthetic data. It pairs with my ACM NeRF benchmarking study.",
       "tags": [
         "ML",
         "NeRF",
@@ -75,7 +75,7 @@
       "title": "FlowState",
       "dates": "May 2023",
       "summary": "A real-time brain-computer interface that uses EEG alpha-band power as an attention signal to speed up or slow down video playback.",
-      "body": "FlowState reads EEG from a Muse headband over Lab Streaming Layer and computes alpha-band power as a rough attention signal. When attention drops, YouTube playback speeds up or slows down in response.\n\nIt is a proof of concept, not a product. What I liked about it was the full loop: a signal from a head, a bit of signal processing, and something you can see change on a screen. It was my first hands-on pass at EEG and fed directly into my later interest in neural decoding.",
+      "body": "FlowState reads EEG from a Muse headband over Lab Streaming Layer and computes alpha-band power as a rough attention signal. When attention drops, YouTube playback speeds up or slows down in response.\n\nIt is a proof of concept, not a product: a signal from a head, a bit of signal processing, and something you can see change on a screen.",
       "tags": [
         "BCI",
         "EEG",
@@ -140,7 +140,7 @@
       "title": "TCG Scanner",
       "dates": "May – Jun 2026",
       "summary": "A real-time trading-card scanner that recognizes cards fully on the device, with no cloud calls.",
-      "body": "TCG Scanner is an Expo / React Native app with native Swift and Kotlin frame-processor plugins. Recognition is tiered: a perceptual hash of the art box and set symbol, a BK-tree for Hamming nearest-neighbor lookup, an Apple Vision OCR cross-check, and trigram-indexed Levenshtein matching on the text, all against a local SQLite database.\n\nThe constraint I set was zero cloud: it should work offline and fast enough to scan as you move the camera. Each tier is cheap and narrows down the candidates for the next one.",
+      "body": "TCG Scanner is an Expo / React Native app with native Swift and Kotlin frame-processor plugins. Recognition is tiered: a perceptual hash of the art box and set symbol, a BK-tree for Hamming nearest-neighbor lookup, an Apple Vision OCR cross-check, and trigram-indexed Levenshtein matching on the text, all against a local SQLite database.\n\nThe constraint I set was zero cloud: everything runs on the device.",
       "tags": [
         "computer vision",
         "React Native",
@@ -195,7 +195,7 @@
       "title": "TheraPT / mun-ching",
       "dates": "Aug 2022 – Jan 2023",
       "summary": "An LLM therapy chatbot, and my first time fine-tuning a language model.",
-      "body": "With Omar Rashdan, who studies cognitive science, I fine-tuned GPT-3 first on synthetic therapist and client dialogues, then on about 200,000 lines of therapy transcripts. On noisy transcribed speech, careful prompt engineering beat fine-tuning, which I did not expect.\n\nWe added conversation memory and a Tkinter interface, then moved to a Vue/Nuxt web app deployed on Linode. It was my way into fine-tuning and into thinking about how a model should behave in a sensitive setting.",
+      "body": "I fine-tuned GPT-3 first on synthetic therapist and client dialogues, then on about 200,000 lines of therapy transcripts, working with a partner who studies cognitive science. On noisy transcribed speech, prompt engineering beat fine-tuning.\n\nWe added conversation memory and a Tkinter interface, then moved to a Vue/Nuxt web app deployed on Linode. It was my way into fine-tuning.",
       "tags": [
         "LLM",
         "fine-tuning",
@@ -234,7 +234,7 @@
       "title": "autoApply",
       "dates": "Oct 2022 – Dec 2023",
       "summary": "A Selenium and BeautifulSoup script that automates filling in applications on Greenhouse job boards.",
-      "body": "autoApply was my introduction to web scraping and browser automation. It drives a browser with Selenium, reads pages with BeautifulSoup, and fills in applications on Greenhouse-hosted job boards.\n\nI learned how brittle page structure is, how to make a script wait for the page rather than the other way round, and how to keep an automation from doing something I did not intend. The earlier resume line says it sped up applying by up to 6x.",
+      "body": "autoApply was my introduction to web scraping and browser automation. It drives a browser with Selenium, reads pages with BeautifulSoup, and fills in applications on Greenhouse-hosted job boards.",
       "tags": [
         "automation",
         "Selenium",
@@ -255,7 +255,7 @@
       "title": "camper_registry",
       "dates": "Jun 2024",
       "summary": "A QR-code attendance system I built for a summer camp.",
-      "body": "A summer camp needed a way to take attendance for about 50 campers, and nothing off the shelf fit, so I built it. Each camper gets a QR code, scanning it records attendance, and the system was deployed and used.\n\nIt is a small tool, but it had a real user with a real need, which made it a good lesson in building the simplest thing that works and shipping it.",
+      "body": "A summer camp needed attendance for about 50 campers, so I built a QR-code attendance system for it.",
       "tags": [
         "Python",
         "QR codes",
@@ -276,7 +276,7 @@
       "title": "Lumii",
       "dates": "Sep 2025",
       "summary": "A modular on-device voice therapy assistant tuned for the Raspberry Pi 5.",
-      "body": "Lumii runs entirely on a Raspberry Pi 5 (ARM64). Audio streams through callbacks, voice activity detection is JIT-compiled with Numba, Whisper handles speech-to-text, VADER scores emotion, and a local LLM runs through Ollama. Replies are spoken with ElevenLabs, and a safety layer filters crisis terms.\n\nMost of the work was making the pieces fit a small ARM board: multiprocessing with CPU affinity tuning so audio capture never starves the model.",
+      "body": "Lumii runs entirely on a Raspberry Pi 5 (ARM64). Audio streams through callbacks, voice activity detection is JIT-compiled with Numba, Whisper handles speech-to-text, VADER scores emotion, and a local LLM runs through Ollama. Replies are spoken with ElevenLabs, and a safety layer filters crisis terms. Multiprocessing uses CPU affinity tuning.",
       "tags": [
         "LLM",
         "Raspberry Pi",
@@ -328,8 +328,8 @@
       "section": "work",
       "title": "Toyota: home energy management (HEMS)",
       "dates": "Mar 2026 – present",
-      "summary": "I build Go microservices for Toyota's home EV-charging platform, which is still in the design and build phase.",
-      "body": "HEMS is Toyota's home EV charging and energy platform, with bidirectional charging. It is a team effort and still before production. I built Go microservices for it, including an OCPP 2.1 WebSocket gateway with mTLS (Security Profile 3) and Kafka message streaming, plus boot and event services for charger telemetry and vehicle-to-home backup-power events.\n\nI also proposed and carried out a redesign of firmware distribution, from an always-on EKS service to event-driven AWS Lambda and Step Functions, because the workload runs only about twice a year and should not pay for idle capacity. I built the signing workflow with mTLS OAuth, async callbacks and LocalStack-based testing.",
+      "summary": "I build Go microservices for Toyota's home EV-charging platform.",
+      "body": "HEMS is Toyota's home EV-charging platform. I built Go microservices for it, including an OCPP 2.1 WebSocket gateway with mTLS (Security Profile 3) and Kafka message streaming, plus boot and event services for charger telemetry and V2H backup-power events.\n\nI also redesigned firmware distribution from an always-on EKS service to event-driven AWS Lambda and Step Functions, so a twice-a-year workload stops paying for idle capacity. I built the signing workflow with mTLS OAuth, async callbacks and LocalStack-based testing.",
       "tags": [
         "Go",
         "OCPP",
@@ -347,13 +347,11 @@
       "title": "Toyota: charging-station data health",
       "dates": "Nov 2024 – Feb 2025",
       "summary": "A data-quality pipeline and dashboard over more than 100,000 EV charging-station records from five provider networks.",
-      "body": "I built a geospatial data-quality pipeline and a Streamlit dashboard over 100,000+ EV charging-station records from 5 provider networks. It surfaces stale, missing and inconsistent station data, and coverage gaps, sometimes called charging deserts.\n\nThe dashboard uses Plotly maps with hover details, box and lasso selection and multi-column filtering, and it is Dockerized so other teams can run it without setup. I delivered it to the navigation team and helped their engineers get started with it.",
+      "body": "I built a geospatial data-quality pipeline and a Streamlit dashboard over 100,000+ EV charging-station records from 5 provider networks. It surfaces stale, missing and inconsistent station data, and coverage gaps, sometimes called charging deserts.",
       "tags": [
         "Python",
         "Elasticsearch",
         "Streamlit",
-        "Plotly",
-        "Docker",
         "data quality"
       ],
       "links": [],
@@ -363,9 +361,9 @@
       "id": "toyota-competitive-analysis",
       "section": "work",
       "title": "Toyota: competitive teardown",
-      "dates": "Dec 2024 – Jan 2025",
-      "summary": "I led a teardown of Tesla's app ecosystem and presented it to Toyota Motor Corporation executives.",
-      "body": "I led a competitive teardown of Tesla's app ecosystem, comparing 110 app frameworks on the Toyota side with 10 on Tesla's. I built the analysis deck and presented the findings to Toyota Motor Corporation executives in Japan.\n\nThe point was to see what a product team could learn from how a competitor structures its mobile and in-car experience, and to put that in a form executives could act on.",
+      "dates": "",
+      "summary": "I led a teardown of Tesla's app ecosystem and presented the findings to Toyota Motor Corporation executives.",
+      "body": "I led a competitive teardown of Tesla's app ecosystem, comparing 110 app frameworks against 10, and presented the findings to Toyota Motor Corporation executives.",
       "tags": [
         "product analysis",
         "presentation",
@@ -398,7 +396,7 @@
       "title": "Scale AI: data-annotation contract",
       "dates": "Oct 2023 – May 2024",
       "summary": "A remote contract reviewing and writing code as training data for code models.",
-      "body": "This was a data-annotation contract, found through Upwork. I reviewed, debugged and rated code responses, and wrote code and test cases as training data for code models. The work included side-by-side ratings, written justifications and tool-use prompts.\n\nI worked across Python, Java, React, Swift, SQL and C++. It was annotation work and did not involve training or evaluating models, and I list it so the timeline between graduating and my next internship is complete.",
+      "body": "This was a data-annotation contract, found through Upwork. I reviewed, debugged and rated code responses, and wrote code and test cases as training data for code models. The work included side-by-side ratings, written justifications and tool-use prompts.\n\nI worked across Python, Java, React, Swift, SQL and C++. It was annotation work and did not involve training or evaluating models.",
       "tags": [
         "data annotation",
         "code review",
@@ -474,14 +472,14 @@
     {
       "id": "neuromatch-program",
       "section": "research",
-      "title": "Neuromatch computational neuroscience program",
+      "title": "Neuromatch computational neuroscience program and certificate",
       "dates": "Jul 2024",
-      "summary": "A 128-hour intensive in neural modeling, machine learning for neural data, and causal inference.",
-      "body": "I completed Neuromatch Academy's Computational Neuroscience program, 128 hours in July 2024. It covers neural modeling, machine learning for neural data and causal inference, and ends in a team research project, which for me was the ECoG joystick decoding work.\n\nIt is the most direct route I have taken into how brains compute, and the reason I treat neuroscience as a working field and not only an interest.",
+      "summary": "A 128-hour Computational Neuroscience certificate from Neuromatch Academy, July 2024.",
+      "body": "I completed Neuromatch Academy's Computational Neuroscience program, 128 hours in July 2024, and earned the certificate. It covers neural modeling, machine learning for neural data and causal inference, and ends in a team research project, which for me was the ECoG joystick decoding work.",
       "tags": [
         "neuroscience",
         "computational neuroscience",
-        "course",
+        "certificate",
         "Neuromatch"
       ],
       "links": [],
@@ -508,7 +506,7 @@
       "id": "rarephish",
       "section": "worlds",
       "title": "Rarephish",
-      "dates": "2022 – Feb 2026",
+      "dates": "2022 – 2026",
       "summary": "A seeded procedural idle fishing game with generative fish, first in Unity and later in Rust.",
       "body": "Rarephish started in C# and Unity and moved to Rust and Bevy in 2026. Worlds are deterministic, built from a seeded ChaCha8 random number generator, and each fish is generated rather than hand-drawn, so a seed always reproduces the same pond.\n\nThe interesting problem is making generated things feel individual: small rules for shape, color and rarity that combine into something you want to collect.",
       "tags": [
@@ -553,7 +551,7 @@
       "title": "Kinesis",
       "dates": "2022",
       "summary": "A VR telekinesis game design with optional control through alpha-wave energy.",
-      "body": "Kinesis is a Unity VR game concept in which the player moves objects with telekinesis, and an optional EEG alpha-wave signal can modulate how much energy they have. It exists as a design and a prototype.\n\nIt was an early attempt to join two of my interests, games and brain-computer interfaces, and led more or less directly to FlowState.",
+      "body": "Kinesis is a Unity VR game concept in which the player moves objects with telekinesis, and an optional EEG alpha-wave signal can modulate how much energy they have. It exists as a design and a prototype.\n\nIt was an attempt to join two of my interests, games and brain-computer interfaces.",
       "tags": [
         "VR",
         "Unity",
@@ -573,8 +571,8 @@
       "section": "worlds",
       "title": "TiltShift",
       "dates": "Nov 2024",
-      "summary": "A concept prototype that converts 2D photos and video into 3D using monocular depth estimation.",
-      "body": "TiltShift explores turning flat photos and video into 3D scenes with monocular depth estimation. I looked at Depth Pro, MiDaS and TMPI, and built a video pipeline on a MiDaS fork.\n\nIt is a prototype, not a finished tool, and the question behind it is how far a single image can take you toward a believable sense of depth.",
+      "summary": "A concept prototype for converting 2D photos and video into 3D using monocular depth estimation.",
+      "body": "TiltShift is a concept and prototype for turning flat photos and video into 3D scenes with monocular depth estimation. I explored Depth Pro, MiDaS and TMPI.\n\nIt is not a finished tool.",
       "tags": [
         "computer vision",
         "depth estimation",
@@ -588,12 +586,13 @@
       "id": "skills",
       "section": "craft",
       "title": "Skills",
-      "dates": "2026",
+      "dates": "",
       "summary": "The languages and tools I use most, grouped by how much I have shipped with them.",
-      "body": "**Daily and in production:** Go and Python, on AWS (EKS, Lambda, Kinesis, Step Functions, S3, API Gateway), with MongoDB, Docker, Kubernetes, Datadog and REST/OpenAPI services.\n\n**Machine learning:** PyTorch, scikit-learn, pandas and NumPy, LightGBM and XGBoost, plus LLM work with fine-tuning, RAG and local models through Ollama. Anomaly detection, autoencoders and time-series modeling are the areas I know best.\n\n**Familiar or growing:** Rust, Swift, TypeScript, Kafka, Elasticsearch, Spark, Unity and Bevy. I use agentic coding tools daily.",
+      "body": "**Daily and in production:** Go and Python, on AWS (EKS, Lambda, Kinesis, Step Functions, S3, API Gateway), with MongoDB, Docker, Kubernetes, Datadog and REST/OpenAPI services.\n\n**Proficient:** TypeScript and JavaScript, Elasticsearch and OpenSearch, Kinesis, and the Python web and visualization stack (FastAPI, Flask, Streamlit, Plotly).\n\n**Machine learning:** PyTorch, scikit-learn, pandas and NumPy, LightGBM and XGBoost, plus LLM work with fine-tuning, RAG and local models through Ollama. Anomaly detection, autoencoders and time-series modeling are the areas I know best.\n\n**Familiar or growing:** Rust, Swift, Kafka, Spark, Unity and Bevy. I use agentic coding tools daily.",
       "tags": [
         "Go",
         "Python",
+        "TypeScript",
         "PyTorch",
         "AWS",
         "MongoDB",
@@ -630,21 +629,6 @@
         "education",
         "computer science",
         "UTD"
-      ],
-      "links": [],
-      "status": null
-    },
-    {
-      "id": "neuromatch-cert",
-      "section": "craft",
-      "title": "Neuromatch certificate",
-      "dates": "Jul 2024",
-      "summary": "A 128-hour Computational Neuroscience certificate from Neuromatch Academy.",
-      "body": "Neuromatch Academy's Computational Neuroscience program, 128 hours, in July 2024. It is also the setting for my ECoG decoding research project; see that entry for the work itself.",
-      "tags": [
-        "certificate",
-        "neuroscience",
-        "Neuromatch"
       ],
       "links": [],
       "status": null
