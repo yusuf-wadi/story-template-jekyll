@@ -1,0 +1,28 @@
+:root { --region-rest: 0.12; --region-hover: 0.35; --fg: #fff; }
+html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-family: system-ui, sans-serif; }
+#app { height: 100%; }
+[hidden] { display: none !important; }
+.profile { position: relative; height: 100%; display: grid; place-items: center; overflow: hidden; }
+.profile-name { position: absolute; top: 24px; left: 24px; }
+.profile-name h1 { margin: 0; font-size: 1.25rem; font-weight: 500; letter-spacing: .02em; }
+.profile-name p { margin: 4px 0 0; font-size: .8rem; opacity: .5; }
+.corner-link { position: absolute; top: 24px; right: 24px; color: var(--fg); opacity: .5; font-size: .8rem; text-decoration: none; }
+.corner-link:hover, .corner-link:focus-visible { opacity: 1; }
+.stage { position: relative; width: min(100vw, 100vh, 800px); aspect-ratio: 1; }
+.stage svg { width: 100%; height: 100%; display: block; }
+.head-outline { fill: #fff; fill-opacity: .04; stroke: #fff; stroke-opacity: .25; stroke-width: 2; }
+.region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .2; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
+.region:hover, .region.is-hover { fill-opacity: var(--region-hover); }
+.region:focus-visible { stroke-opacity: 1; stroke-width: 3; }
+.region.is-complete { stroke-opacity: .7; }
+.region.is-pulse { animation: pulse .9s ease-out; }
+@keyframes pulse { 0% { fill-opacity: .8; } 100% { fill-opacity: var(--region-rest); } }
+.writing-mark { position: absolute; left: 10%; top: 63%; font-size: .7rem; letter-spacing: .08em; color: var(--fg); opacity: .4; text-decoration: none; }
+.writing-mark:hover, .writing-mark:focus-visible { opacity: 1; text-decoration: underline; }
+.region-label { position: absolute; bottom: 64px; left: 0; right: 0; text-align: center; font-size: 1rem; letter-spacing: .1em; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.region-label.is-on { opacity: .9; }
+.progress { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; font-size: .75rem; opacity: .5; }
+@media (prefers-reduced-motion: reduce) {
+  .region, .region-label { transition: none; }
+  .region.is-pulse { animation: none; }
+}
