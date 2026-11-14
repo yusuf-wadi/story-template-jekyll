@@ -21,7 +21,7 @@ async function armFirstFrame(page: Page, id: string) {
 async function clickNode(page: Page, id: string) {
   await page.goto('/?e2e#projects')
   await page.waitForFunction(() => (window as any).__cm?.nodeAnchor)
-  await page.waitForTimeout(1500) // let the sim settle so the click lands
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true) // so the click lands
   await armFirstFrame(page, id)
   const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), id)
   await page.mouse.click(p.x, p.y)
@@ -40,7 +40,8 @@ test('clicking a node grows the card out of the node, then it settles beside it'
   // the start circle carries the node's colour
   expect(f.anchor.color).toMatch(/^#[0-9a-f]{6}$/)
 
-  await page.waitForTimeout(600)
+  // the morph is done once the content has faded fully in
+  await expect.poll(() => page.evaluate(() => document.querySelector<HTMLElement>('.reader-inner')?.style.opacity)).toBe('1')
   const s = await page.evaluate((i) => {
     const r = document.querySelector('.reader')!.getBoundingClientRect()
     return { r: { x: r.x, y: r.y, w: r.width, h: r.height }, node: (window as any).__cm.nodeScreenPos(i), vw: innerWidth, vh: innerHeight }
@@ -77,14 +78,14 @@ test('the card follows its node while the camera eases', async ({ page }) => {
   for (const g of gaps.slice(2)) expect(g).toBeLessThanOrEqual(48)
 })
 
-test('closing collapses the card back and returns focus to the graph', async ({ page }) => {
+test('closing collapses the card back and returns focus to its node', async ({ page }) => {
   const id = tour[0]
   await clickNode(page, id)
-  await page.waitForTimeout(600)
+  await expect(page.getByRole('dialog').getByRole('heading')).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(page).toHaveURL(/#projects$/)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page.locator('.scene-host')).toBeFocused()
+  await expect(page.locator(`[data-node-label="${id}"]`)).toBeFocused()
 })
 
 test.describe('reduced motion', () => {
@@ -111,4 +112,16 @@ test('links with unsafe schemes are rendered as plain text', async ({ page }) =>
   await page.goto(`/?e2e#projects/${tour[0]}`)
   const hrefs = await page.getByRole('dialog').locator('a[href]').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).protocol))
   for (const p of hrefs) expect(['https:', 'http:', 'mailto:']).toContain(p)
+})
+
+test('resizing to a phone width with a card open keeps the node above the sheet', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto(`/?e2e#projects/${tour[0]}`)
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.setViewportSize({ width: 500, height: 800 })
+  // after the reframe tween, the node sits above the sheet's top edge
+  await expect.poll(async () => page.evaluate((i) => {
+    const r = document.querySelector('.reader')!.getBoundingClientRect()
+    return (window as any).__cm.nodeScreenPos(i).y < r.top
+  }, tour[0]), { timeout: 5000 }).toBe(true)
 })

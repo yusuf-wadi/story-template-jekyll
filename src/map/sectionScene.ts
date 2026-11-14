@@ -23,6 +23,12 @@ export interface SectionScene {
   diving(): 'in' | 'out' | null
   /** CSS-px centre, on-screen radius and hue of a node at its current sim position (null when not shown). */
   nodeAnchor(id: string): { x: number; y: number; r: number; color: string } | null
+  /** Called after every rendered frame (the camera or nodes may have moved). Frames stop when the scene is idle. */
+  onFrame(fn: () => void): void
+  /** Focus the first node button in tour order; false if the section has none. */
+  focusFirstNode(): boolean
+  /** The focusable button of a node (its label). */
+  nodeButton(id: string): HTMLElement | null
   dispose(): void
 }
 
@@ -65,6 +71,8 @@ type Dive = {
   ids: string[]
   jitter: Float32Array
   delay: Float32Array
+  /** Each particle's node hue, resolved once when the dive starts. */
+  hues: THREE.Color[]
   fade: Animation | null
 }
 
@@ -81,7 +89,15 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   controls.maxDistance = 40
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   controls.autoRotateSpeed = 0.4
-  const labels = createLabels(host)
+  const labels = createLabels(host, {
+    hover(id) {
+      fields?.setHighlight(null)
+      setHoverNode(id)
+      emitHover(id ? titles.get(id) ?? null : null)
+      invalidate()
+    },
+    open(id) { clickFn(id) },
+  })
 
   let fields: ClusterFields | null = null
   let view: GraphView | null = null
@@ -89,6 +105,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   let awake = false
   let titles = new Map<string, string>()
   let clickFn: (id: string) => void = () => {}
+  let frameFn: () => void = () => {}
   let hoverFn: (label: string | null) => void = () => {}
   let lastLabel: string | null = null
   let hoverId: string | null = null
@@ -96,7 +113,10 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   let selected: string | null = null
   let interacted = false
   let raf = 0
+  /** The scene is shown; frames are drawn only while something changes (see `loop`). */
   let running = false
+  /** Something changed that needs a frame drawn (input, resize, focus, refresh...). */
+  let dirty = false
   type Shift = { x: number; y: number }
   let focusTween: { from: THREE.Vector3; to: THREE.Vector3; s0: Shift; s1: Shift; t: number } | null = null
   /** Screen-space framing (px): moves the focused node off-centre so it and its card read as one composition. */
@@ -126,7 +146,14 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     if (renderer.getPixelRatio() !== pixelRatio()) renderer.setPixelRatio(pixelRatio())
     renderer.setSize(w, h)
     camera.aspect = w / h
+    // Keep the open node clear of the card/sheet when the viewport changes shape.
+    if (selected) {
+      const s1 = framing(true)
+      if (focusTween) focusTween.s1 = s1
+      else shift = s1
+    }
     applyShift()
+    invalidate()
   }
   function applyShift() {
     const w = host.clientWidth || window.innerWidth
@@ -155,6 +182,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     hoverId = id
     view?.setFocus(id ?? selected)
     awake = true
+    invalidate()
   }
   function screenPos(id: string): { x: number; y: number } | null {
     const p = sim?.positions.get(id)
@@ -208,6 +236,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   // Capture phase on the host runs before OrbitControls' canvas listener, so a node press never starts an orbit.
   const onDown = (e: PointerEvent) => {
     if (e.target !== el) return
+    invalidate()
     if (dive) { finishDive(); return } // a click mid-dive skips to the end
     touching = e.pointerType === 'touch'
     interacted = true
@@ -224,6 +253,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   host.addEventListener('pointerdown', onDown, true)
   el.addEventListener('pointermove', (e) => {
     pointer = { x: e.clientX, y: e.clientY }
+    invalidate()
     if (down?.id && down.plane && sim) {
       if (!dragging && Math.hypot(e.clientX - down.x, e.clientY - down.y) <= CLICK_PX) return
       dragging = true
@@ -235,7 +265,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   })
   /** Drop any press/drag: release the pinned node and give orbit back. */
   function resetDrag() {
-    if (down?.id) { sim?.pin(down.id, null); awake = true }
+    if (down?.id) { sim?.pin(down.id, null); awake = true; invalidate() }
     down = null
     dragging = false
     controls.enabled = true
@@ -245,10 +275,11 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   el.addEventListener('lostpointercapture', resetDrag)
   el.addEventListener('pointerleave', (e) => {
     if (down?.id || e.pointerType === 'touch') return // a lifted finger "leaves"; keep the tapped label up
-    pointer = null; fields?.setHighlight(null); setHoverNode(null); emitHover(null)
+    pointer = null; fields?.setHighlight(null); setHoverNode(null); emitHover(null); invalidate()
   })
   el.addEventListener('pointerup', (e) => {
     if (!down) return
+    invalidate()
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y)
     const pressed = down.id
     down = null
@@ -295,7 +326,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     const d: Dive = {
       dir, t0: performance.now(), dur: reduced ? FADE_MS : DIVE_MS, from,
       cam0: dir === 'in' ? far : near, cam1: dir === 'in' ? near : far,
-      points: null, ids: [], jitter: new Float32Array(0), delay: new Float32Array(0), fade: null,
+      points: null, ids: [], jitter: new Float32Array(0), delay: new Float32Array(0), hues: [], fade: null,
     }
     if (reduced || !from || !from.pts.length || !sim) {
       if (dir === 'in') d.fade = host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS })
@@ -310,6 +341,8 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     const dx = from.origin.x - from.center.x, dy = from.origin.y - from.center.y
     const nodePx = nodeIds.map((id) => { const p = screenPos(id) ?? { x: from.center.x, y: from.center.y }; return { x: p.x + dx, y: p.y + dy } })
     d.ids = assignParticles(from.pts, nodePx, from.origin).map((i) => nodeIds[i])
+    const hueOf = new Map(nodeIds.map((id) => [id, new THREE.Color(view!.colorOf(id)!)]))
+    d.hues = d.ids.map((id) => hueOf.get(id)!)
     const n = d.ids.length
     d.jitter = new Float32Array(n * 3)
     d.delay = new Float32Array(n)
@@ -354,7 +387,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       const k = easeInOutCubic((t - d.delay[i]) / 0.6)
       if (d.dir === 'in') a3.lerp(b3, k); else a3.copy(b3.lerp(a3, k))
       pos.setXYZ(i, a3.x, a3.y, a3.z)
-      col.copy(SPARK).lerp(new THREE.Color(view.colorOf(id)!), d.dir === 'in' ? k : 1 - k)
+      col.copy(SPARK).lerp(d.hues[i], d.dir === 'in' ? k : 1 - k)
       cols.setXYZ(i, col.r, col.g, col.b)
     }
     pos.needsUpdate = true
@@ -373,15 +406,18 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       ;(d.points.material as THREE.Material).dispose()
     }
     setReveal(1)
-    if (d.dir === 'in') { camera.position.copy(d.cam1); controls.update() }
+    if (d.dir === 'in') { camera.position.copy(d.cam1); controls.update(); invalidate() }
     else { stop(); host.hidden = true }
     return true
   }
 
-  function frame(dt: number) {
+  /** Draw one frame; returns true if something is still moving and another frame is needed. */
+  function frame(dt: number): boolean {
+    let more = false
     if (sim && awake && !reduced) {
       sim.step(dt)
       if (!sim.pinned() && sim.energy() < SLEEP_E * sim.positions.size) awake = false
+      else more = true
     }
     if (focusTween) {
       focusTween.t = Math.min(1, focusTween.t + dt / 0.8)
@@ -392,42 +428,61 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       shift = { x: s0.x + (s1.x - s0.x) * k, y: s0.y + (s1.y - s0.y) * k }
       applyShift()
       if (focusTween.t >= 1) focusTween = null
+      else more = true
     }
     if (dive) {
       const t = heldT ?? Math.min(1, (performance.now() - dive.t0) / dive.dur)
       stepDive(t)
-      if (t >= 1) { finishDive(); if (!running) return }
+      if (t >= 1) { finishDive(); if (!running) return false }
+      else more = true
     }
     controls.autoRotate = !reduced && !interacted && hoverId === null && selected === null && !dive
-    controls.update()
+    // true while orbiting, auto-rotating or damping out
+    if (controls.update()) more = true
     if (sim && view) {
-      view.sync(sim.positions, reduced ? Infinity : dt)
+      if (view.sync(sim.positions, reduced ? Infinity : dt)) more = true
       const lit = hoverId ? new Set([hoverId, ...view.neighbors.get(hoverId)!]) : null
       const v0 = view
-      labels.update(camera, sim.positions, lit ? new Set([...view.meshes.keys()].filter((i) => !lit.has(i))) : null,
-        (id) => (id === hoverId ? 1000 : id === selected ? 900 : lit?.has(id) ? 100 : 0) + v0.neighbors.get(id)!.size)
+      if (labels.update(camera, sim.positions, lit ? new Set([...view.meshes.keys()].filter((i) => !lit.has(i))) : null,
+        (id) => (id === hoverId ? 1000 : id === selected ? 900 : lit?.has(id) ? 100 : 0) + v0.neighbors.get(id)!.size)) more = true
     }
     renderer.render(scene, camera)
+    frameFn()
+    return more
   }
   let prev = 0
   /** e2e/perf only: CPU ms spent in the last 240 frames (render submit included). */
   const work: number[] = []
   const probe = import.meta.env.DEV || location.search.includes('e2e')
+  /** e2e only: frames drawn since the scene was created. */
+  let frames = 0
   function loop(now: number) {
+    raf = 0
     if (!running) return
     const t0 = probe ? performance.now() : 0
-    frame(Math.min(0.05, (now - prev) / 1000))
+    dirty = false
+    const more = frame(Math.min(0.05, Math.max(0, now - prev) / 1000))
+    frames++
     if (probe) { work.push(performance.now() - t0); if (work.length > 240) work.shift() }
     prev = now
+    // Render on demand: keep going only while something moves or changed during this frame; input restarts it.
+    if (running && (more || dirty) && !raf) raf = requestAnimationFrame(loop)
+  }
+  /** Ask for a frame (no-op while hidden; restarts an idle loop). */
+  function invalidate() {
+    dirty = true
+    if (!running || raf) return
+    prev = performance.now()
     raf = requestAnimationFrame(loop)
   }
   function start() {
     if (running) return
     running = true
-    prev = performance.now()
-    raf = requestAnimationFrame(loop)
+    invalidate()
   }
-  function stop() { running = false; cancelAnimationFrame(raf) }
+  function stop() { running = false; cancelAnimationFrame(raf); raf = 0 }
+  controls.addEventListener('change', invalidate)
+  controls.addEventListener('start', invalidate)
 
   const api: SectionScene = {
     async enter(_section, layout, items, from) {
@@ -439,7 +494,10 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       sim = createForceSim(layout.nodes.map((n) => ({ id: n.id, anchor: n.pos })), view.edges)
       if (reduced) sim.settle(300)
       awake = !reduced
-      labels.set(layout.nodes.map((n) => ({ id: n.id, text: titles.get(n.id) ?? n.id })))
+      // Label buttons in tour order: Tab walks the section the way ←/→ does.
+      const order = [...layout.tour.filter((id) => layout.nodes.some((n) => n.id === id)),
+        ...layout.nodes.map((n) => n.id).filter((id) => !layout.tour.includes(id))]
+      labels.set(order.map((id) => ({ id, text: titles.get(id) ?? id })))
       api.refresh()
       view.sync(sim.positions, Infinity)
       fields = createClusterFields(layout.clusters)
@@ -458,6 +516,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       lastLabel = null
       hoverFn(null)
       start()
+      invalidate()
       if (from) startDive('in', from)
     },
     async exit(from) {
@@ -468,7 +527,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       armed = null
       selected = null
       view?.setFocus(null)
-      if (from && !reduced && !host.hidden && sim) { focusTween = null; startDive('out', from); return }
+      if (from && !reduced && !host.hidden && sim) { focusTween = null; startDive('out', from); invalidate(); return }
       stop()
       host.hidden = true
     },
@@ -486,17 +545,20 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
         shift = s1
         applyShift()
         controls.update()
+        invalidate()
         return
       }
       focusTween = { from: controls.target.clone(), to, s0: { ...shift }, s1, t: 0 }
+      invalidate()
     },
     onNodeClick(fn) { clickFn = fn },
     onHover(fn) { hoverFn = fn },
     refresh() {
       view?.refresh(isVisited)
       labels.setVisited(isVisited)
+      invalidate()
     },
-    cancelTransitions() { focusTween = null; return finishDive() },
+    cancelTransitions() { focusTween = null; invalidate(); return finishDive() },
     diving() { return dive?.dir ?? null },
     nodeAnchor(id) {
       const m = view?.meshes.get(id)
@@ -506,6 +568,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       const r = (m.scale.x * pxPerUnit) / Math.max(1e-3, camera.position.distanceTo(sim!.positions.get(id)!))
       return { x: s.x, y: s.y, r, color: view!.colorOf(id)! }
     },
+    onFrame(fn) { frameFn = fn },
+    focusFirstNode() { return labels.focusFirst() },
+    nodeButton(id) { return host.hidden ? null : labels.button(id) },
     dispose() {
       stop()
       window.removeEventListener('resize', resize)
@@ -528,7 +593,11 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],
       diving: () => api.diving(),
-      holdDive: (t: number | null) => { heldT = t },
+      holdDive: (t: number | null) => { heldT = t; invalidate() },
+      frames: () => frames,
+      idle: () => running && !raf,
+      /** The sim is asleep and no focus tween or dive is running (auto-rotate may still turn the camera). */
+      settled: () => (reduced || !awake) && !focusTween && !dive,
       reveal: () => view?.reveal() ?? null,
       particles: () => dive?.points ? dive.ids.length : 0,
       dragState: () => ({ dragging, pressed: !!down, orbit: controls.enabled, pinned: sim?.pinned() ?? false }),

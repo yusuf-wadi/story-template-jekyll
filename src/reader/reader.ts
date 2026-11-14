@@ -11,6 +11,8 @@ export interface Reader {
   isOpen(): boolean
   onNav(fn: (dir: 1 | -1) => void): void
   onBack(fn: () => void): void
+  /** The tracked node may have moved (the scene drew a frame): a settled desktop card re-anchors to it. */
+  follow(): void
 }
 
 export interface ReaderOptions {
@@ -225,8 +227,8 @@ export function mountReader(root: HTMLElement, opts: ReaderOptions = {}): Reader
       }
     }
     apply(anchorNow(), p)
-    // Settled sheets don't move; settled desktop cards keep following their node.
-    if (phase !== 'open' || !narrow()) raf = requestAnimationFrame(tick)
+    // Once settled the card stops ticking: a desktop card follows its node via `follow()` (scene frames), a sheet stays put.
+    if (phase !== 'open') raf = requestAnimationFrame(tick)
   }
 
   function showReduced(e: Entry) {
@@ -305,6 +307,10 @@ export function mountReader(root: HTMLElement, opts: ReaderOptions = {}): Reader
       startLoop()
     },
     isOpen: () => opened,
+    follow() {
+      if (phase !== 'open' || raf || reduced || narrow()) return
+      apply(anchorNow(), 1)
+    },
     onNav(fn) { navFn = fn },
     onBack(fn) { backFn = fn },
   }

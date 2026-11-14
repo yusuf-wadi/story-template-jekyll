@@ -2,6 +2,7 @@ import type { Content, Region, SectionId } from '../types'
 import type { Progress } from '../progress'
 import { HEAD_SVG, REGION_IDS } from './head'
 import { mountLight } from './light'
+import { usingKeyboard } from '../modality'
 import { drawTraces, fitPcb, seedFor, type Pcb } from './pcb'
 import { DIVE_MS, EASE_CSS, FADE_MS, PARTICLES, diveZoom, type DiveFrom } from '../dive'
 
@@ -133,7 +134,8 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     const off = () => { p.classList.remove('is-hover'); label.classList.remove('is-on') }
     p.addEventListener('pointerenter', on)
     p.addEventListener('pointerleave', off)
-    p.addEventListener('focus', on)
+    // Keyboard focus shows the label; focus from a click or from code after a pointer action doesn't add a hover.
+    p.addEventListener('focus', () => { if (usingKeyboard()) on() })
     p.addEventListener('blur', off)
     p.addEventListener('click', () => onEnter(s.id))
     p.addEventListener('keydown', (e) => {
@@ -207,6 +209,12 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
       label.classList.remove('is-on')
     },
     diveFrom,
+    /** Put focus back on a section's lobe (after leaving that section). */
+    focusRegion(section: SectionId) {
+      const region = regionOf.get(section)
+      const p = region ? paths.get(region) : null
+      if (p && !el.hidden) p.focus({ preventScroll: true })
+    },
     /** Measure a dive into `section`'s lobe and freeze a ghost of the profile, before the route hides it. */
     prepareDive(section: SectionId): PreparedDive | null {
       const from = diveFrom(section)

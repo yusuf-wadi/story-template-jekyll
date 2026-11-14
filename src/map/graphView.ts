@@ -24,8 +24,8 @@ export interface GraphView {
   meshes: Map<string, THREE.Mesh>
   neighbors: Map<string, Set<string>>
   edges: [string, string][]
-  /** Copy sim positions into meshes/edges and advance the focus fade (dt=Infinity snaps). */
-  sync(positions: Map<string, THREE.Vector3>, dt: number): void
+  /** Copy sim positions into meshes/edges and advance the focus fade (dt=Infinity snaps). True while a fade is easing. */
+  sync(positions: Map<string, THREE.Vector3>, dt: number): boolean
   setFocus(id: string | null): void
   /** Global fade (0..1) used while the dive brings the graph in or out. */
   setReveal(k: number): void
@@ -127,14 +127,17 @@ export function createGraphView(layout: SectionLayout): GraphView {
     return cur < to ? Math.min(to, cur + step) : Math.max(to, cur - step)
   }
 
-  function sync(positions: Map<string, THREE.Vector3>, dt: number) {
+  function sync(positions: Map<string, THREE.Vector3>, dt: number): boolean {
     const lit = focus ? new Set([focus, ...neighbors.get(focus)!]) : null
+    let easing = false
     for (const [id, m] of meshes) {
       const s = state.get(id)!
       const p = positions.get(id)
       if (p) m.position.copy(p)
-      s.vis = approach(s.vis, !lit || lit.has(id) ? 1 : DIM, dt)
-      s.scale = approach(s.scale, id === focus ? 1.35 : 1, dt === Infinity ? dt : dt * 2)
+      const vTo = !lit || lit.has(id) ? 1 : DIM, sTo = id === focus ? 1.35 : 1
+      s.vis = approach(s.vis, vTo, dt)
+      s.scale = approach(s.scale, sTo, dt === Infinity ? dt : dt * 2)
+      if (s.vis !== vTo || s.scale !== sTo) easing = true
       m.scale.setScalar(s.radius * s.scale)
       const mat = m.material as THREE.MeshLambertMaterial
       // visited: a solid, lit sphere; unvisited: hollow (faint fill) inside a ring of its hue
@@ -151,7 +154,9 @@ export function createGraphView(layout: SectionLayout): GraphView {
     }
     edges.forEach(([a, b], i) => {
       const hot = focus !== null && (a === focus || b === focus)
-      edgeVis[i] = approach(edgeVis[i], !focus ? 1 : hot ? EDGE_HOT / EDGE_ALPHA : DIM, dt)
+      const eTo = !focus ? 1 : hot ? EDGE_HOT / EDGE_ALPHA : DIM
+      edgeVis[i] = approach(edgeVis[i], eTo, dt)
+      if (edgeVis[i] !== eTo) easing = true
       const k = EDGE_ALPHA * edgeVis[i] * reveal
       const pa = meshes.get(a)!.position
       const pb = meshes.get(b)!.position
@@ -164,6 +169,7 @@ export function createGraphView(layout: SectionLayout): GraphView {
     eGeo.attributes.position.needsUpdate = true
     eGeo.attributes.color.needsUpdate = true
     eGeo.computeBoundingSphere()
+    return easing
   }
 
   return {

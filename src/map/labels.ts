@@ -1,13 +1,27 @@
 import * as THREE from 'three'
 import { layoutLabels, type LabelBox } from './labelLayout'
+import { usingKeyboard } from '../modality'
+
+export interface LabelEvents {
+  /** Keyboard focus on a label: treat as hovering its node (null on blur). */
+  hover(id: string | null): void
+  /** The label was activated (Enter, Space, or an assistive-tech click). */
+  open(id: string): void
+}
 
 export interface Labels {
+  /** One focusable `<button>` per node, in the given (tour) order so Tab walks the tour. */
   set(items: { id: string; text: string }[]): void
   /**
    * Position each label beside its node; ids in `dim` fade to 0.15, the rest fade with camera distance. Overlapping
    * labels are nudged apart (or the lower `priority` one hidden) so the ones that matter stay readable.
+   * Returns true while a nudge is still easing (another frame is needed).
    */
-  update(camera: THREE.Camera, positions: Map<string, THREE.Vector3>, dim: Set<string> | null, priority?: (id: string) => number): void
+  update(camera: THREE.Camera, positions: Map<string, THREE.Vector3>, dim: Set<string> | null, priority?: (id: string) => number): boolean
+  /** The label button for a node. */
+  button(id: string): HTMLButtonElement | null
+  /** Focus the first label (tour order); false if there is none. */
+  focusFirst(): boolean
   clear(): void
   /** Whole-layer fade (0..1) for the dive. */
   setReveal(k: number): void
@@ -28,14 +42,16 @@ const OFF_Y = 5
 /** Per-frame easing of a label toward its nudged slot. */
 const NUDGE_EASE = 0.25
 
-export function createLabels(host: HTMLElement): Labels {
+export function createLabels(host: HTMLElement, events: LabelEvents = { hover() {}, open() {} }): Labels {
   const layer = document.createElement('div')
   layer.className = 'node-labels'
   host.append(layer)
-  let els = new Map<string, HTMLElement>()
+  let els = new Map<string, HTMLButtonElement>()
   const size = new Map<string, { w: number; h: number }>()
   const nudge = new Map<string, { dy: number; hidden: boolean }>()
   let depth = 1
+  /** The node a keyboard focus is currently hovering. */
+  let focusHover: string | null = null
   const v = new THREE.Vector3()
   const camPos = new THREE.Vector3()
 
@@ -44,10 +60,17 @@ export function createLabels(host: HTMLElement): Labels {
       layer.replaceChildren()
       els = new Map()
       for (const it of items) {
-        const el = document.createElement('div')
+        const el = document.createElement('button')
+        el.type = 'button'
         el.className = 'node-label'
         el.dataset.nodeLabel = it.id
         el.textContent = it.text
+        // Pointer input goes to the canvas (labels overlap other nodes); the button serves keyboard and assistive tech.
+        // Keyboard focus lights the node like a hover; focus set by code after a click or on load doesn't.
+        el.addEventListener('focus', () => { if (usingKeyboard()) { focusHover = it.id; events.hover(it.id) } })
+        // blur only undoes a hover that focus set (a tap or click elsewhere sets its own)
+        el.addEventListener('blur', () => { if (focusHover === it.id) { focusHover = null; events.hover(null) } })
+        el.addEventListener('click', () => events.open(it.id))
         layer.append(el)
         els.set(it.id, el)
       }
@@ -78,16 +101,26 @@ export function createLabels(host: HTMLElement): Labels {
         if (sz.w) boxes.push({ id, x: x + OFF_X, y: y + OFF_Y, w: sz.w, h: sz.h, priority: pr })
       }
       const place = layoutLabels(boxes)
+      let easing = false
       for (const s of shown) {
         const target = place.get(s.id) ?? { dy: 0, hidden: false }
         const cur = nudge.get(s.id) ?? { dy: target.dy, hidden: false }
         cur.dy += (target.dy - cur.dy) * NUDGE_EASE
         if (Math.abs(target.dy - cur.dy) < 0.1) cur.dy = target.dy
+        else easing = true
         cur.hidden = target.hidden
         nudge.set(s.id, cur)
         s.el.style.transform = `translate(${s.x.toFixed(1)}px, ${(s.y + cur.dy).toFixed(1)}px)`
         s.el.style.opacity = (cur.hidden ? 0 : s.op).toFixed(3)
       }
+      return easing
+    },
+    button(id) { return els.get(id) ?? null },
+    focusFirst() {
+      const first = els.values().next().value
+      if (!first) return false
+      first.focus({ preventScroll: true })
+      return document.activeElement === first
     },
     clear() {
       layer.replaceChildren()

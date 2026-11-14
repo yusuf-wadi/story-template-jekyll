@@ -64,10 +64,13 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   })
   let currentSection: SectionId | null = null
   let currentRoute: Route = parseRoute(location.hash, content)
+  /** The item whose card is (or was last) open: closing the card returns focus to its node button. */
+  let openItem: string | null = null
   const reader = mountReader(root, {
     track: (id) => scene.nodeAnchor(id),
-    returnFocus: () => (sceneHost.hidden ? null : sceneHost),
+    returnFocus: () => (sceneHost.hidden ? null : (openItem ? scene.nodeButton(openItem) : null) ?? sceneHost),
   })
+  scene.onFrame(() => reader.follow())
   reader.onNav((dir) => {
     if (currentRoute.view !== 'item') return
     const next = step(layout.sections[currentRoute.section].tour, currentRoute.item, dir)
@@ -135,8 +138,11 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
         const dive = route.view === 'section' && pend?.section === route.section ? pend.dive : null
         void scene.enter(route.section, layout.sections[route.section], items, dive?.from)
         if (dive) profile.playGhost(dive)
+        // Keyboard path: entering a section lands on its first node (the card takes focus itself on an item route).
+        if (route.view === 'section' && !scene.focusFirstNode()) back.focus({ preventScroll: true })
       }
       if (route.view === 'item') {
+        openItem = route.item
         const tour = layout.sections[route.section].tour
         const item = content.items.find((i) => i.id === route.item)!
         // Focus first: under reduced motion it jumps, and the card is placed against the final camera.
@@ -147,10 +153,12 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       return
     }
     const left = currentSection
-    if (left) { currentSection = null; hoverLabel.textContent = '' }
+    if (left) { currentSection = null; openItem = null; hoverLabel.textContent = '' }
     if (route.view === 'profile') {
       listHost.hidden = true
       profile.show()
+      // Back on the head, focus the lobe that was left so the keyboard path continues from there.
+      if (left) profile.focusRegion(left)
       if (left) {
         // Reverse the dive back into the lobe, unless this exit itself cut a dive short (then land at once).
         const from = interrupted ? null : profile.diveFrom(left)
