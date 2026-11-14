@@ -1,0 +1,381 @@
+{
+  "sections": {
+    "projects": {
+      "nodes": [
+        {
+          "id": "tinygrad-ngp",
+          "pos": [
+            4.052,
+            1.305,
+            0.703
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "flowstate",
+          "pos": [
+            -2.35,
+            3.988,
+            -5.117
+          ],
+          "cluster": 1
+        },
+        {
+          "id": "mtg-vector-math",
+          "pos": [
+            3.88,
+            -3.656,
+            2.314
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "mtg-oracle",
+          "pos": [
+            -0.288,
+            -0.756,
+            5.708
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "chess-vis",
+          "pos": [
+            3.362,
+            -0.369,
+            6.263
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "freaqy",
+          "pos": [
+            -1.493,
+            -5.177,
+            2.097
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "therapt",
+          "pos": [
+            1.635,
+            0.807,
+            -5.51
+          ],
+          "cluster": 2
+        },
+        {
+          "id": "powerslides",
+          "pos": [
+            -3.57,
+            4.013,
+            3.179
+          ],
+          "cluster": 1
+        },
+        {
+          "id": "autoapply",
+          "pos": [
+            -6.352,
+            2.452,
+            1.208
+          ],
+          "cluster": 1
+        },
+        {
+          "id": "camper-registry",
+          "pos": [
+            2.876,
+            -4.64,
+            -2.066
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "lumii",
+          "pos": [
+            0.719,
+            4.007,
+            -6.887
+          ],
+          "cluster": 2
+        },
+        {
+          "id": "pmsi",
+          "pos": [
+            -2.471,
+            -1.973,
+            -1.893
+          ],
+          "cluster": 0
+        }
+      ],
+      "clusters": [
+        {
+          "id": 0,
+          "label": "built \u00b7 model",
+          "centroid": [
+            1.417,
+            -2.181,
+            1.875
+          ],
+          "radius": 5.918
+        },
+        {
+          "id": 1,
+          "label": "signal \u00b7 attention",
+          "centroid": [
+            -4.091,
+            3.484,
+            -0.243
+          ],
+          "radius": 5.7
+        },
+        {
+          "id": 2,
+          "label": "fine \u00b7 tuning",
+          "centroid": [
+            1.177,
+            2.407,
+            -6.198
+          ],
+          "radius": 2.301
+        }
+      ],
+      "tour": [
+        "pmsi",
+        "freaqy",
+        "mtg-vector-math",
+        "camper-registry",
+        "therapt",
+        "lumii",
+        "flowstate",
+        "autoapply",
+        "powerslides",
+        "mtg-oracle",
+        "chess-vis",
+        "tinygrad-ngp"
+      ]
+    },
+    "work": {
+      "nodes": [
+        {
+          "id": "toyota-apple-maps",
+          "pos": [
+            -0.995,
+            4.186,
+            -2.294
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "toyota-hems",
+          "pos": [
+            -3.965,
+            -4.228,
+            -0.371
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "toyota-charging-data",
+          "pos": [
+            -3.06,
+            -1.842,
+            -6.646
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "toyota-competitive-analysis",
+          "pos": [
+            4.32,
+            -1.638,
+            -3.534
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "seeloz",
+          "pos": [
+            4.164,
+            -0.196,
+            5.776
+          ],
+          "cluster": 1
+        },
+        {
+          "id": "monoware",
+          "pos": [
+            -0.465,
+            3.717,
+            7.069
+          ],
+          "cluster": 1
+        }
+      ],
+      "clusters": [
+        {
+          "id": 0,
+          "label": "toyota \u00b7 ev",
+          "centroid": [
+            -0.925,
+            -0.88,
+            -3.211
+          ],
+          "radius": 5.84
+        },
+        {
+          "id": 1,
+          "label": "sql \u00b7 company",
+          "centroid": [
+            1.85,
+            1.76,
+            6.422
+          ],
+          "radius": 3.599
+        }
+      ],
+      "tour": [
+        "toyota-apple-maps",
+        "toyota-charging-data",
+        "toyota-hems",
+        "toyota-competitive-analysis",
+        "seeloz",
+        "monoware"
+      ]
+    },
+    "research": {
+      "nodes": [
+        {
+          "id": "ecog-joystick",
+          "pos": [
+            -0.075,
+            6.677,
+            -0.0
+          ],
+          "cluster": null
+        },
+        {
+          "id": "nerf-study",
+          "pos": [
+            7.294,
+            -3.287,
+            0.0
+          ],
+          "cluster": null
+        },
+        {
+          "id": "neuromatch-program",
+          "pos": [
+            -7.219,
+            -3.39,
+            0.0
+          ],
+          "cluster": null
+        }
+      ],
+      "clusters": [],
+      "tour": [
+        "ecog-joystick",
+        "neuromatch-program",
+        "nerf-study"
+      ]
+    },
+    "worlds": {
+      "nodes": [
+        {
+          "id": "liminal-bevy",
+          "pos": [
+            -1.357,
+            -2.984,
+            -5.499
+          ],
+          "cluster": null
+        },
+        {
+          "id": "rarephish",
+          "pos": [
+            -2.554,
+            -4.805,
+            4.289
+          ],
+          "cluster": null
+        },
+        {
+          "id": "vr-modding",
+          "pos": [
+            7.874,
+            1.229,
+            0.7
+          ],
+          "cluster": null
+        },
+        {
+          "id": "tiltshift",
+          "pos": [
+            -3.963,
+            6.56,
+            0.51
+          ],
+          "cluster": null
+        }
+      ],
+      "clusters": [],
+      "tour": [
+        "liminal-bevy",
+        "rarephish",
+        "tiltshift",
+        "vr-modding"
+      ]
+    },
+    "craft": {
+      "nodes": [
+        {
+          "id": "skills",
+          "pos": [
+            0.537,
+            -0.672,
+            5.939
+          ],
+          "cluster": null
+        },
+        {
+          "id": "imc-prosperity",
+          "pos": [
+            5.675,
+            4.409,
+            -1.881
+          ],
+          "cluster": null
+        },
+        {
+          "id": "utd-bs-cs",
+          "pos": [
+            1.338,
+            -5.949,
+            -2.605
+          ],
+          "cluster": null
+        },
+        {
+          "id": "languages",
+          "pos": [
+            -7.549,
+            2.212,
+            -1.453
+          ],
+          "cluster": null
+        }
+      ],
+      "clusters": [],
+      "tour": [
+        "skills",
+        "utd-bs-cs",
+        "imc-prosperity",
+        "languages"
+      ]
+    }
+  }
+}
