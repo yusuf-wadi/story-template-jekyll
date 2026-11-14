@@ -43,6 +43,8 @@ export interface ProfileOpts {
   content: Content
   progress: Progress
   onEnter(section: SectionId): void
+  /** A lobe just finished wiring in front of the viewer (not on load): `wired` of `total` lobes are now complete. */
+  onLobeWired?(wired: number, total: number): void
 }
 
 export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
@@ -94,8 +96,10 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     await drawTraces(g, pcb, visitedIds, newlyVisited)
     // the last trace lands, then the mask fills and the edge pads light
     const still = ids.length > 0 && ids.every((id) => progress.isVisited(id))
+    const was = p.classList.contains('is-pcb')
     p.classList.toggle('is-pcb', still)
     g.classList.toggle('is-pcb', still)
+    if (still && !was && newlyVisited.size && !el.hidden) opts.onLobeWired?.(mapped.filter((s) => isDone(s.id)).length, mapped.length)
   }
 
   // The latest sync's trace work; `whenWired` waits for it to settle.

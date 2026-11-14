@@ -199,3 +199,108 @@ test.describe('reduced motion', () => {
     expect(idle).toBe(0) // no blink or glow pulse either
   })
 })
+
+// ---- the hint: a faint closed eye from the start that flickers as each lobe is wired
+const hint = (page: Page) => page.locator('[data-egg-eye-closed]')
+/** Count the flicker animations started on the closed eye (each WAAPI animate call with the flicker id). */
+async function countFlickers(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __flickers: number }
+    w.__flickers = 0
+    const orig = Element.prototype.animate
+    Element.prototype.animate = function (this: Element, k: Keyframe[] | PropertyIndexedKeyframes | null, o?: number | KeyframeAnimationOptions) {
+      if (typeof o === 'object' && o.id === 'egg-flicker' && this.closest('[data-egg-eye-closed]')) w.__flickers++
+      return orig.call(this, k, o)
+    }
+  })
+}
+const flickers = (page: Page) => page.evaluate(() => (window as unknown as { __flickers: number }).__flickers)
+const research = items.filter((i) => i.section === 'research').map((i) => i.id)
+const lastResearch = research[research.length - 1]
+
+test('fresh visit: a faint closed eye on the face, inert and unfocusable', async ({ page }) => {
+  await page.goto('/')
+  await expect(hint(page)).toHaveCount(1)
+  const r = await hint(page).evaluate((e) => {
+    let op = 1
+    for (let n: Element | null = e; n; n = n.parentElement) op *= +getComputedStyle(n).opacity
+    ;(e as SVGElement).focus()
+    return { op, focused: document.activeElement === e, hidden: e.getAttribute('aria-hidden'), open: e.classList.contains('is-open'),
+      events: getComputedStyle(e).pointerEvents }
+  })
+  expect(r.op).toBeGreaterThan(0.05)
+  expect(r.op).toBeLessThan(0.25)
+  expect(r).toMatchObject({ focused: false, hidden: 'true', open: false, events: 'none' })
+  await expect(eye(page)).toHaveCount(0)
+  await expect(page.locator('[data-egg-trace]')).toHaveCount(0)
+  // clicking where the eye is opens nothing
+  const b = (await hint(page).boundingBox())!
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+  await expect(page.locator('[data-egg-card]')).toHaveCount(0)
+})
+
+test('wiring a lobe flickers the closed eye once; a reload with it already wired does not', async ({ page }) => {
+  await countFlickers(page)
+  await seed(page, research.filter((id) => id !== lastResearch), true)
+  await page.goto('/')
+  await expect(hint(page)).toHaveCount(1)
+  await page.goto(`/#research/${lastResearch}`)
+  await expect(page.locator('.reader')).toBeVisible()
+  await page.goto('/#')
+  await expect(page.locator('.region.is-pcb')).toHaveCount(1, { timeout: 6000 })
+  await expect.poll(() => flickers(page), { timeout: 3000 }).toBe(1)
+  await page.waitForTimeout(800)
+  expect(await flickers(page)).toBe(1)
+  await page.reload()
+  await expect(page.locator('.region.is-pcb')).toHaveCount(1, { timeout: 6000 })
+  await expect(hint(page)).toHaveCount(1)
+  await page.waitForTimeout(800)
+  expect(await flickers(page)).toBe(0)
+})
+
+test('completing every lobe: the closed eye itself opens (one eye element)', async ({ page }) => {
+  const last = allRegionIds[allRegionIds.length - 1]
+  await seed(page, allRegionIds.filter((id) => id !== last), false)
+  await page.goto('/')
+  await expect(hint(page)).toHaveCount(1)
+  await hint(page).evaluate((e) => { (window as unknown as { __hint: Element }).__hint = e })
+  const section = items.find((i) => i.id === last)!.section
+  await page.goto(`/#${section}/${last}`)
+  await expect(page.locator('.reader')).toBeVisible()
+  await page.goto('/#')
+  await expect(eye(page)).toHaveAttribute('data-state', 'open', { timeout: 12000 })
+  const r = await page.evaluate(() => ({
+    eyes: document.querySelectorAll('.egg-eye').length,
+    same: document.querySelector('.egg-eye') === (window as unknown as { __hint: Element }).__hint,
+    open: document.querySelector('.egg-eye')!.classList.contains('is-open'),
+    op: +getComputedStyle(document.querySelector('.egg-eye')!).opacity,
+  }))
+  expect(r).toEqual({ eyes: 1, same: true, open: true, op: 1 })
+  await expect(hint(page)).toHaveCount(0)
+  // later loads: the open eye, no closed one
+  await page.reload()
+  await expect(eye(page)).toHaveAttribute('data-state', 'open')
+  await expect(hint(page)).toHaveCount(0)
+  await expect(page.locator('.egg-eye')).toHaveCount(1)
+  // rewire: back to the faint closed eye
+  await page.locator('[data-egg-rewire]').click()
+  await expect(hint(page)).toHaveCount(1)
+  await expect(page.locator('.egg-eye')).toHaveCount(1)
+})
+
+test.describe('reduced motion hint', () => {
+  test.use({ reducedMotion: 'reduce' })
+  test('the closed eye shows but never flickers', async ({ page }) => {
+    await countFlickers(page)
+    await seed(page, research.filter((id) => id !== lastResearch), true)
+    await page.goto('/')
+    await expect(hint(page)).toHaveCount(1)
+    await page.goto(`/#research/${lastResearch}`)
+    await expect(page.locator('.reader')).toBeVisible()
+    await page.goto('/#')
+    await expect(page.locator('.region.is-pcb')).toHaveCount(1, { timeout: 6000 })
+    await page.waitForTimeout(800)
+    expect(await flickers(page)).toBe(0)
+    await expect(hint(page)).toHaveCount(1)
+  })
+})

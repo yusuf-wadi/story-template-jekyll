@@ -11,6 +11,10 @@
 /* a tight, faint glow hugging the diode: no bloom */
 .egg-sym-glow { fill: none; stroke: var(--trace-hi); stroke-width: 4.4; stroke-linejoin: round; stroke-linecap: round; stroke-opacity: .28; filter: blur(1.6px); }
 .egg-eye:not(.is-open) .egg-sym-ball { opacity: 0; }
+/* the hint: the shut eye, barely there, from the first visit; it brightens to electric blue for a beat as a lobe is wired */
+.egg-eye.is-hint { opacity: .15; pointer-events: none; }
+.egg-eye.is-hint .egg-sym-tail { display: none; } /* no feed yet: the lead tail arrives with the traces */
+.egg-eye.is-hint.is-flicker .egg-sym-plate { stroke: var(--trace-hi); }
 
 /* the glass rims catch the eye's light (see profile/light.ts) */
 .eye-rim { fill: none; stroke-width: 1.5; pointer-events: none; opacity: 0; transition: opacity .8s; }

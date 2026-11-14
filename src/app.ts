@@ -7,7 +7,7 @@ import { fitPcb, generatePcb, seedFor } from './profile/pcb'
 import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
 import { step } from './tour'
-import { playEgg } from './egg/egg'
+import { mountEyeHint, playEgg, type EyeHint } from './egg/egg'
 import { renderList } from './list/list'
 
 export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress, opts: { webgl?: boolean } = {}): void {
@@ -35,6 +35,8 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       pendingDive = { section, dive: profile.prepareDive(section) }
       go(toHash({ view: 'section', section }))
     },
+    // Each lobe wired short of the last charges the closed eye a little.
+    onLobeWired: (wired, total) => { if (wired < total) hint?.flicker(wired, total) },
   })
   const listHost = document.createElement('div')
   listHost.hidden = true
@@ -93,6 +95,8 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     .map((s) => content.items.filter((i) => i.section === s.id).map((i) => i.id))
   const nextItems = content.items.filter((i) => i.section === 'next')
   let egg: { reset(): void } | null = null
+  // Until the circuit closes, the eye is there, shut and faint; the egg opens that same eye.
+  let hint: EyeHint | null = progress.areAllComplete(regionItemIds) ? null : mountEyeHint(profile.head)
   let eggPending = false
   const maybeEgg = async () => {
     if (egg || eggPending || profile.isHidden() || !progress.areAllComplete(regionItemIds)) return
@@ -100,7 +104,8 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     try {
       const wired = await profile.whenWired()
       if (!wired || egg || profile.isHidden() || !progress.areAllComplete(regionItemIds)) return
-      egg = playEgg(profile.el, profile, nextItems, !progress.isEggSeen(), () => progress.reset())
+      egg = playEgg(profile.el, profile, nextItems, !progress.isEggSeen(), () => progress.reset(), hint)
+      hint = null
       progress.markEggSeen()
     } finally {
       eggPending = false
@@ -108,6 +113,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   }
   progress.onChange(() => {
     if (egg && !progress.areAllComplete(regionItemIds)) { egg.reset(); egg = null }
+    if (!egg && !hint && !progress.areAllComplete(regionItemIds)) hint = mountEyeHint(profile.head)
     void maybeEgg()
   })
   if (import.meta.env.DEV || location.search.includes('e2e')) {

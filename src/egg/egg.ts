@@ -50,7 +50,7 @@ const drawIn = (len: number): Keyframe[] =>
   [{ strokeDasharray: `${len} ${len}`, strokeDashoffset: len }, { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 }]
 
 export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[], animate: boolean,
-  onRewire: () => void = () => {}): { reset(): void } {
+  onRewire: () => void = () => {}, hint: EyeHint | null = null): { reset(): void } {
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const anim = animate && !reduced
   const head = profile.head
@@ -128,38 +128,13 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     return { g, glow, copper, pad }
   })
 
-  // The eye, in profile, as a tiny circuit: battery plates for lids (long +, short −) powering a diode eyeball.
-  // The diode and its wires are clipped to everything below the upper plate, so the plate uncovers them as it
-  // lifts; the upper lead's tail stretches down to the plate while it is lowered.
-  const uid = Math.random().toString(36).slice(2, 8)
-  const maskId = `egg-eye-mask-${uid}`
-  const eye = svg('g', { transform: `translate(${EYE.x} ${EYE.y})` }, 'egg-eye')
-  const maskClip = svg('clipPath', { id: maskId })
-  const mask = svg('rect', PLATE_MASK)
-  maskClip.append(mask)
-  const shape = svg('path', { d: EYE_SHAPE, fill: 'none', stroke: 'none' }, 'egg-eye-shape') // the outline the e2e checks
-  const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-sym-ball')
-  const wires = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-wire'))
-  const currents = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-current'))
-  const diodeGlow = svg('path', { d: DIODE_D }, 'egg-sym-glow')
-  const diode = svg('path', { d: DIODE_D }, 'egg-sym-diode')
-  const diodeLit = svg('path', { d: DIODE_D }, 'egg-sym-lit')
-  ball.append(...wires, ...currents, diodeGlow, diode, diodeLit)
-  const lower = svg('path', { d: LOWER_D }, 'egg-sym-plate')
-  const tail = svg('path', { d: leadTailD(0) }, 'egg-sym-plate egg-sym-tail')
-  const upper = svg('g', {}, 'egg-sym-upper')
-  upper.append(svg('path', { d: UPPER_D }, 'egg-sym-plate'), svg('path', { d: PLUS_D }, 'egg-sym-plus'))
-  /** Openness: 0 shut (plates together), 1 open. */
-  const setLid = (t: number) => {
-    const tf = plateTransform(t)
-    mask.setAttribute('transform', tf)
-    upper.setAttribute('transform', tf)
-    tail.setAttribute('d', leadTailD(Math.min(1, t)))
-  }
-  setLid(0)
-  eye.append(maskClip, shape, ball, tail, lower, upper)
+  // The eye: adopted from the faint closed hint when there is one (the same element opens), else built here.
+  const parts = hint?.adopt() ?? buildEye()
+  const { eye, setLid, currents, diodeGlow, diodeLit } = parts
+  const fromHint = eye.classList.contains('is-hint')
   board.append(eye)
   head.append(board)
+  const unhint = () => { eye.classList.remove('is-hint'); delete eye.dataset.eggEyeClosed }
   const announce = (open: boolean) => window.dispatchEvent(new CustomEvent('egg-eye', { detail: { open } }))
 
   // ---------------------------------------------------------------- HTML: eye button, rewire, card
@@ -273,6 +248,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
   const showFinal = () => {
     for (const l of links) l.g.classList.add('is-on')
     for (const t of traces) t.g.classList.add('is-on')
+    unhint()
     eye.classList.add('is-open')
     eye.style.visibility = ''
     setLid(1)
@@ -309,7 +285,8 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
 
   // ---------------------------------------------------------------- the sequence
   const T = TIMING
-  eye.style.visibility = 'hidden' // no hint of the eye until the trace reaches the face
+  // Built fresh, no sign of the eye until the trace reaches the face; adopted, the faint closed eye waits there.
+  if (!fromHint) eye.style.visibility = 'hidden'
   const t0 = T.settle
   links.forEach((l, i) => at(t0 + i * T.linkStagger, () => {
     const len = pathLen(l.copper)
@@ -357,9 +334,11 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
 
   const t3 = t2 + (traces.length - 1) * T.traceStagger + T.trace
   at(t3 - T.trace * 0.45, () => {
-    // The shut eye fades in as the traces arrive: both plates together, shorted.
+    // The shut eye fades in (or up, from the faint hint) as the traces arrive: both plates together, shorted.
+    const from = fromHint ? +getComputedStyle(eye).opacity : 0
+    unhint()
     eye.style.visibility = ''
-    play(eye, [{ opacity: 0 }, { opacity: 1 }], { duration: T.trace * 0.45, easing: 'ease-in' })
+    play(eye, [{ opacity: from }, { opacity: 1 }], { duration: T.trace * 0.45, easing: 'ease-in' })
   })
   at(t3, () => {
     // The battery connects: the upper plate lifts off the lower one (a touch past open, then settles). Current
@@ -404,4 +383,92 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     root.classList.remove('is-booted')
   }
   return { reset }
+}
+
+// ---------------------------------------------------------------- the eye itself, and the hint
+interface EyeParts {
+  eye: SVGGElement
+  /** Openness: 0 shut (plates together), 1 open. */
+  setLid(t: number): void
+  currents: SVGPathElement[]
+  diodeGlow: SVGPathElement
+  diodeLit: SVGPathElement
+}
+
+/**
+ * The eye, in profile, as a tiny circuit: battery plates for lids (long +, short −) powering a diode eyeball.
+ * The diode and its wires are clipped to everything below the upper plate, so the plate uncovers them as it
+ * lifts; the upper lead's tail stretches down to the plate while it is lowered. Built shut.
+ */
+function buildEye(): EyeParts {
+  const uid = Math.random().toString(36).slice(2, 8)
+  const maskId = `egg-eye-mask-${uid}`
+  const eye = svg('g', { transform: `translate(${EYE.x} ${EYE.y})` }, 'egg-eye')
+  const maskClip = svg('clipPath', { id: maskId })
+  const mask = svg('rect', PLATE_MASK)
+  maskClip.append(mask)
+  const shape = svg('path', { d: EYE_SHAPE, fill: 'none', stroke: 'none' }, 'egg-eye-shape') // the outline the e2e checks
+  const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-sym-ball')
+  const wires = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-wire'))
+  const currents = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-current'))
+  const diodeGlow = svg('path', { d: DIODE_D }, 'egg-sym-glow')
+  const diode = svg('path', { d: DIODE_D }, 'egg-sym-diode')
+  const diodeLit = svg('path', { d: DIODE_D }, 'egg-sym-lit')
+  ball.append(...wires, ...currents, diodeGlow, diode, diodeLit)
+  const lower = svg('path', { d: LOWER_D }, 'egg-sym-plate')
+  const tail = svg('path', { d: leadTailD(0) }, 'egg-sym-plate egg-sym-tail')
+  const upper = svg('g', {}, 'egg-sym-upper')
+  upper.append(svg('path', { d: UPPER_D }, 'egg-sym-plate'), svg('path', { d: PLUS_D }, 'egg-sym-plus'))
+  const setLid = (t: number) => {
+    const tf = plateTransform(t)
+    mask.setAttribute('transform', tf)
+    upper.setAttribute('transform', tf)
+    tail.setAttribute('d', leadTailD(Math.min(1, t)))
+  }
+  setLid(0)
+  eye.append(maskClip, shape, ball, tail, lower, upper)
+  return { eye, setLid, currents, diodeGlow, diodeLit }
+}
+
+export interface EyeHint {
+  /** One brief faint pulse as a lobe is wired; `wired` of `total` lobes sets its strength. No-op under reduced motion. */
+  flicker(wired: number, total: number): void
+  /** Hand the eye to the egg (it opens this same element); the hint is spent. */
+  adopt(): EyeParts
+  remove(): void
+}
+
+/** Before the circuit closes: the eye, shut (plates shorted, diode dark, no feed), barely there. Inert. */
+export function mountEyeHint(head: SVGGElement): EyeHint {
+  const parts = buildEye()
+  const { eye } = parts
+  eye.classList.add('is-hint')
+  eye.dataset.eggEyeClosed = ''
+  eye.setAttribute('aria-hidden', 'true')
+  head.append(eye)
+  let flick: Animation | null = null
+  let spent = false
+  return {
+    flicker(wired, total) {
+      if (spent || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)) return
+      const base = +getComputedStyle(eye).opacity
+      const k = Math.max(0, Math.min(1, (wired - 1) / Math.max(1, total - 2))) // 1/5 → 0 … 4/5 → 1
+      const peak = 0.26 + 0.14 * k
+      flick?.cancel()
+      flick = eye.animate([{ opacity: base }, { opacity: peak, offset: 0.3 }, { opacity: base }],
+        { duration: 250, easing: 'ease-out', id: 'egg-flicker' })
+      eye.classList.add('is-flicker')
+      flick.onfinish = flick.oncancel = () => eye.classList.remove('is-flicker')
+    },
+    adopt() {
+      spent = true
+      flick?.cancel()
+      return parts
+    },
+    remove() {
+      spent = true
+      flick?.cancel()
+      eye.remove()
+    },
+  }
 }
