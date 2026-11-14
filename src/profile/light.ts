@@ -33,11 +33,17 @@ export function mountLight(stage: HTMLElement): void {
   const bubbleBody = bubble.querySelector<SVGPathElement>('.bubble-body')!
   // Head: stage px -> viewBox (800) -> source coords (inverse of HEAD_TRANSFORM, scale .88).
   add(headSvg, headOutline, 'head-light', 320 / 0.88, (sx, sy) => [(sx * 800 + 74.8) / 0.88, (sy * 800 + 38.3) / 0.88], headG)
-  // Bubble: occupies left 2% / top 52%, 17% wide, aspect 2 (viewBox 100x50).
-  add(bubble, bubbleBody, 'bubble-light', 260, (sx, sy) => [((sx - 0.02) / 0.17) * 100, ((sy - 0.52) / 0.085) * 50], bubble)
-
+  // Bubble: stage fraction -> its viewBox (100x50), from where it sits on the stage (measured, so CSS can move it).
   let rect = stage.getBoundingClientRect()
-  const measure = () => { rect = stage.getBoundingClientRect() }
+  let bub = bubble.getBoundingClientRect()
+  add(bubble, bubbleBody, 'bubble-light', 260, (sx, sy) => {
+    if (!bub.width) measure() // first measured while the profile was hidden
+    return [
+      ((rect.left + sx * rect.width - bub.left) / bub.width) * 100,
+      ((rect.top + sy * rect.height - bub.top) / bub.height) * 50,
+    ]
+  }, bubble)
+  const measure = () => { rect = stage.getBoundingClientRect(); bub = bubble.getBoundingClientRect() }
   addEventListener('resize', measure)
   addEventListener('scroll', measure, { passive: true })
 

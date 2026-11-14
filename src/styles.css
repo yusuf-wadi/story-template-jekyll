@@ -15,7 +15,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
 .region:hover, .region.is-hover { fill-opacity: var(--region-hover); }
 .region:focus-visible { stroke-opacity: 1; stroke-width: 3; }
-.writing-mark { position: absolute; left: 2%; top: 52%; width: 17%; aspect-ratio: 2; display: block; color: var(--fg); text-decoration: none; outline: none; transition: transform .2s; }
+.writing-mark { position: absolute; left: 0; top: 57%; width: 17%; aspect-ratio: 2; display: block; color: var(--fg); text-decoration: none; outline: none; transition: transform .2s; }
 .writing-mark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .bubble-body { fill: url(#bubble-fill); fill-opacity: .022; stroke: url(#bubble-rim); stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke .2s; }
 .bubble-glow { fill: url(#bubble-glow); stroke: none; }
