@@ -36,6 +36,15 @@ const svg = <K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
   return e
 }
 const pathLen = (p: SVGGeometryElement) => { try { return p.getTotalLength() } catch { return 0 } }
+/** Centre x of an element's box, or null when it isn't rendered (getBBox throws in Firefox, is zero in Chrome). */
+const centreX = (e: SVGGraphicsElement): number | null => {
+  try {
+    const b = e.getBBox()
+    return b.width || b.height ? b.x + b.width / 2 : null
+  } catch {
+    return null
+  }
+}
 const drawIn = (len: number): Keyframe[] =>
   [{ strokeDasharray: `${len} ${len}`, strokeDashoffset: len }, { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 }]
 
@@ -166,7 +175,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     if (isOpen && !card.contains(t) && !button.contains(t)) closeCard(false)
   }
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && isOpen) { e.preventDefault(); closeCard(true) }
+    if (e.key === 'Escape' && isOpen && !root.hidden) { e.preventDefault(); closeCard(true) }
   }
   const onResize = () => { if (isOpen) closeCard(false) }
   document.addEventListener('pointerdown', onDocDown)
@@ -240,10 +249,29 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     rewire.hidden = false
     root.classList.add('is-booted')
   }
-  if (!anim) {
+  // The profile hiding (entering a section) closes the card without moving focus, and settles a running
+  // sequence at once: its timers must not keep working against a display:none SVG.
+  let playing = false
+  const hideWatch = new MutationObserver(() => {
+    if (!root.hidden) return
+    closeCard(false)
+    if (playing) finish()
+  })
+  hideWatch.observe(root, { attributes: true, attributeFilter: ['hidden'] })
+  function finish() {
+    playing = false
+    for (const t of timers) clearTimeout(t)
+    timers.length = 0
+    for (const a of anims) a.cancel()
+    anims.length = 0
+    head.querySelector('.egg-pulse')?.remove()
+    showFinal()
+  }
+  if (!anim || root.hidden) {
     showFinal()
     return { reset }
   }
+  playing = true
 
   // ---------------------------------------------------------------- the sequence
   const T = TIMING
@@ -263,8 +291,9 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     const pulse = svg('g', { 'aria-hidden': 'true' }, 'egg-pulse')
     head.append(pulse)
     for (const src of head.querySelectorAll<SVGPathElement>('.pcb-copper, .egg-link-copper')) {
-      const b = src.getBBox()
-      const delay = waveAt(b.x + b.width / 2, FRONT_X, BACK_X) * T.wave
+      const x = centreX(src)
+      if (x === null) continue
+      const delay = waveAt(x, FRONT_X, BACK_X) * T.wave
       const p = svg('path', { d: src.getAttribute('d')! }, 'egg-spike')
       pulse.append(p)
       const phase = Math.random() * 30
@@ -272,9 +301,10 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
         { duration: T.spike, delay, easing: 'linear', fill: 'both' })
     }
     for (const r of head.querySelectorAll<SVGPathElement>('.region.is-pcb')) {
-      const b = r.getBBox()
+      const x = centreX(r)
+      if (x === null) continue
       play(r, [{ fillOpacity: 0.55 }, { fillOpacity: 0.8, offset: 0.3 }, { fillOpacity: 0.55 }],
-        { duration: T.spike, delay: waveAt(b.x + b.width / 2, FRONT_X, BACK_X) * T.wave, easing: 'ease-in-out' })
+        { duration: T.spike, delay: waveAt(x, FRONT_X, BACK_X) * T.wave, easing: 'ease-in-out' })
     }
     root.classList.add('is-booted')
     at(T.wave + T.spike + 60, () => pulse.remove())
@@ -311,6 +341,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
   at(t3 + T.lids + T.iris + 300, () => {
     rewire.hidden = false
     play(rewire, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 })
+    playing = false
   })
 
   function reset() {
@@ -321,6 +352,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     document.removeEventListener('pointerdown', onDocDown)
     document.removeEventListener('keydown', onKey)
     window.removeEventListener('resize', onResize)
+    hideWatch.disconnect()
     head.querySelector('.egg-pulse')?.remove()
     board.remove()
     button.remove()

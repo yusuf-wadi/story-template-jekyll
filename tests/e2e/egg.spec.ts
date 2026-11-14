@@ -119,6 +119,34 @@ test('completing the last region in-session triggers the egg on return to the pr
   await expect(eye(page)).toHaveAttribute('data-state', 'open', { timeout: 12000 })
 })
 
+test('leaving the profile mid-sequence settles the egg; the card never survives a hide', async ({ page }) => {
+  const last = allRegionIds[allRegionIds.length - 1]
+  const section = items.find((i) => i.id === last)!.section
+  await seed(page, allRegionIds.filter((id) => id !== last), false)
+  await page.goto(`/#${section}/${last}`) // completion happens here
+  await expect(page.locator('.reader')).toBeVisible()
+  await page.goto('/#')
+  await expect(page.locator('.egg-pulse').first()).toBeAttached({ timeout: 6000 }) // sequence under way
+  await page.waitForTimeout(300)
+  await page.goto(`/#${section}`)
+  await expect(page.locator('[data-view="section"]')).toBeVisible()
+  await page.waitForTimeout(400)
+  await page.goto('/#')
+  await expect(eye(page)).toHaveAttribute('data-state', 'open')
+  await expect(page.locator('.egg-pulse')).toHaveCount(0)
+  expect(await eggAnimations(page)).toBe(0)
+  await expect(page.locator('[data-egg-card]')).toBeHidden()
+
+  // An open card closes when the profile hides, and Escape in a section doesn't reach it.
+  await eye(page).click()
+  await expect(page.locator('[data-egg-card]')).toBeVisible()
+  await page.goto(`/#${section}`)
+  await expect(page.locator('[data-view="section"]')).toBeVisible()
+  await page.goto('/#')
+  await expect(page.locator('[data-egg-card]')).toBeHidden()
+  await expect(eye(page)).toHaveAttribute('aria-expanded', 'false')
+})
+
 test('storage that throws: the egg still plays and rewire still resets', async ({ page }) => {
   await page.addInitScript(() => {
     const boom = () => { throw new Error('denied') }
