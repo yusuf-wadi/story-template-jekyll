@@ -18,74 +18,58 @@ export function bridge(a: UV, b: UV): UV[] {
 }
 
 /**
- * The eye, as Yusuf sketched it: on the face just behind the brow, level with the gap between the frontal and
- * temporal boards. In profile (the face is toward −x) it is line art in the traces' stroke language: an eyeball
- * drawn as a "C" bulging toward the face, an upper and a lower lid running back from it as near-level strokes
- * (the upper one a little longer, overhanging the front), and an iris just inside the C. `rx` is half the eye's
- * depth, `ry` half its height.
+ * The eye, as Yusuf sketched it and drawn as a schematic symbol: in profile (the face is toward −x) it is a
+ * polarized capacitor crossed with a battery. The upper lid is a long straight plate, the lower lid a shorter one
+ * (battery-style long/short plates, level, running back from the eye), and the eyeball is the curved plate of an
+ * electrolytic capacitor: a "C" bulging toward the face at the front, between the plates. Each straight plate takes
+ * a lead square-on at its middle, like a component on a schematic. `rx` is half the eye's depth, `ry` half its height.
  */
 export const EYE = { x: 274, y: 420, rx: 22, ry: 19 }
 
-/** Local coordinates, origin at EYE. The upper lid runs from its front end to its hinge at the back. */
-export const LID_FRONT: UV = [-22, -20]
-export const LID_HINGE: UV = [22, -17]
-export const LOWER_LID: [UV, UV] = [[-16, 18], [22, 18]]
-/** Height of the open upper lid at local x. */
-export const lidY = (x: number) =>
-  LID_FRONT[1] + ((x - LID_FRONT[0]) / (LID_HINGE[0] - LID_FRONT[0])) * (LID_HINGE[1] - LID_FRONT[1])
-/** Where the eyeball's C leaves the upper lid and lands on the lower one. */
-export const BALL_TOP: UV = [-4, lidY(-4)]
-export const BALL_BOTTOM: UV = [-10, LOWER_LID[0][1]]
-const BALL_C: [UV, UV] = [[-21, -17], [-23, 14]]
+/** Local coordinates, origin at EYE. */
+export const UPPER_PLATE: [UV, UV] = [[-20, -17], [24, -17]]
+export const LOWER_PLATE: [UV, UV] = [[-12, 15], [16, 15]]
+/** Both leads land on their plate's middle, one above the other. */
+export const LEAD_X = 2
+/** The curved plate: from just under the upper plate, round the front, to just over the lower plate. */
+export const ARC_TOP: UV = [-6, -13]
+export const ARC_BOTTOM: UV = [-4, 11]
+const ARC_C: [UV, UV] = [[-26, -11], [-26, 9]]
+/** The polarity mark, beside the upper plate's back end. */
+export const PLUS = { x: 15, y: -23, r: 2.6 }
 
 /**
- * Shut, the upper lid is swung down about its hinge until its front end rests on the lower lid. Returns the
- * lid's rotation (degrees, about LID_HINGE) at openness t: 0 shut, 1 open; values a little past 1 overshoot.
+ * Shut, the plates lie together (a shorted capacitor): the upper one rests just above the lower. Returns the upper
+ * plate's drop (local units, +y) at openness t: 0 shut, 1 open; values a little past 1 overshoot.
  */
-const SHUT_DEG = (() => {
-  const vx = LID_FRONT[0] - LID_HINGE[0], vy = LID_FRONT[1] - LID_HINGE[1]
-  const r = Math.hypot(vx, vy), drop = LOWER_LID[0][1] - LID_HINGE[1]
-  // Rotating v by −φ: its y becomes r·sin(φ − α) with α the lid's own tilt; solve for y = drop.
-  const a = Math.atan2(-vy, -vx)
-  return -((Math.asin(drop / r) + a) * 180) / Math.PI
-})()
-export const lidAngle = (t: number) => SHUT_DEG * (1 - t)
-/** A local point carried by the upper lid at openness t. */
-export function onLid(p: UV, t: number): UV {
-  const a = (lidAngle(t) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a)
-  const dx = p[0] - LID_HINGE[0], dy = p[1] - LID_HINGE[1]
-  return [LID_HINGE[0] + dx * c - dy * s, LID_HINGE[1] + dx * s + dy * c]
-}
-export const lidTransform = (t: number) => `rotate(${+lidAngle(t).toFixed(3)} ${LID_HINGE[0]} ${LID_HINGE[1]})`
+export const SHUT_DROP = LOWER_PLATE[0][1] - UPPER_PLATE[0][1] - 3
+export const plateDrop = (t: number) => SHUT_DROP * (1 - t)
+export const plateTransform = (t: number) => `translate(0 ${+plateDrop(t).toFixed(3)})`
 
 const f = (p: UV) => `${+p[0].toFixed(2)} ${+p[1].toFixed(2)}`
-/** The upper lid in its open position (it is swung by lidTransform). */
-export const UPPER_D = `M${f(LID_FRONT)} L${f(LID_HINGE)}`
-export const LOWER_D = `M${f(LOWER_LID[0])} L${f(LOWER_LID[1])}`
-/** Everything below the open upper lid; carried by the lid, it is what the lid uncovers as it lifts. */
-export const LID_MASK_D = (() => {
-  const v: UV = [LID_FRONT[0] - LID_HINGE[0], LID_FRONT[1] - LID_HINGE[1]]
-  const fwd: UV = [LID_HINGE[0] + v[0] * 3, LID_HINGE[1] + v[1] * 3]
-  const back: UV = [LID_HINGE[0] - v[0] * 2, LID_HINGE[1] - v[1] * 2]
-  return `M${f(back)} L${f(fwd)} L${f([fwd[0], 140])} L${f([back[0], 140])} Z`
-})()
-/** The eyeball's C, from the upper lid round the front to the lower lid. */
-export const BALL_D = `M${f(BALL_TOP)} C${f(BALL_C[0])} ${f(BALL_C[1])} ${f(BALL_BOTTOM)}`
-/** The open eye's outline: the C, back along the lower lid, up to the hinge, forward along the upper lid. */
-export const EYE_SHAPE = `${BALL_D} L${f(LOWER_LID[1])} L${f(LID_HINGE)} L${f(BALL_TOP)} Z`
-/** The iris, nearly edge-on just inside the C toward the face, and the pupil on it. */
-export const IRIS_D = 'M-9 -9 C-13.5 -4 -13.5 5 -9 10'
-export const PUPIL = { cx: -12.4, cy: 0.5, r: 2.4 }
+/** The upper plate in its open position (it is lowered by plateTransform). */
+export const UPPER_D = `M${f(UPPER_PLATE[0])} L${f(UPPER_PLATE[1])}`
+export const LOWER_D = `M${f(LOWER_PLATE[0])} L${f(LOWER_PLATE[1])}`
+export const PLUS_D = `M${PLUS.x - PLUS.r} ${PLUS.y} h${PLUS.r * 2} M${PLUS.x} ${PLUS.y - PLUS.r} v${PLUS.r * 2}`
+/** The upper lead's tail inside the eye: from the open plate down to wherever the plate is (empty when open). */
+export const leadTailD = (t: number) => `M${LEAD_X} ${UPPER_PLATE[0][1]} V${+(UPPER_PLATE[0][1] + plateDrop(t)).toFixed(3)}`
+/** Everything below the open upper plate; carried by the plate, it is what the plate uncovers as it lifts. */
+export const PLATE_MASK = { x: -60, y: UPPER_PLATE[0][1], width: 120, height: 80 }
+/** The curved plate, top to bottom. */
+export const ARC_D = `M${f(ARC_TOP)} C${f(ARC_C[0])} ${f(ARC_C[1])} ${f(ARC_BOTTOM)}`
+/** The open eye's outline: along the upper plate, down to the lower plate, forward along it, up round the arc. */
+export const EYE_SHAPE = `M${f(UPPER_PLATE[0])} L${f(UPPER_PLATE[1])} L${f(LOWER_PLATE[1])} L${f(LOWER_PLATE[0])} ` +
+  `L${f(ARC_BOTTOM)} C${f(ARC_C[1])} ${f(ARC_C[0])} ${f(ARC_TOP)} Z`
 
 /**
  * Two traces feed the eye (head source coordinates). The upper one leaves the frontal board's lower-front
- * chamfer, runs down-left under it and drops straight onto the upper lid where the C begins. The lower one leaves
- * the temporal board's front chamfer down-left to a V under the eye, then climbs into the lower lid's back end.
+ * chamfer, runs down-left under it and drops straight onto the upper plate's middle. The lower one leaves the
+ * temporal board's front chamfer down-left to a chamfered V under the eye, then rises straight into the lower plate.
  */
-const UP_X = EYE.x + BALL_TOP[0]
-export const UPPER_TRACE: UV[] = [[326, 350], [306, 370], [UP_X + 6, 370], [UP_X, 376], [UP_X, EYE.y + BALL_TOP[1]]]
-const LOW_END: UV = [EYE.x + LOWER_LID[1][0], EYE.y + LOWER_LID[1][1]]
-export const LOWER_TRACE: UV[] = [[355, 447], [334, 468], [LOW_END[0] + 30, LOW_END[1] + 30], LOW_END]
+const LX = EYE.x + LEAD_X
+export const UPPER_TRACE: UV[] = [[326, 350], [306, 370], [LX + 6, 370], [LX, 376], [LX, EYE.y + UPPER_PLATE[0][1]]]
+const LOW_END: UV = [LX, EYE.y + LOWER_PLATE[0][1]]
+export const LOWER_TRACE: UV[] = [[355, 447], [334, 468], [LX + 24, 468], [LX, 444], LOW_END]
 export const EYE_TRACES: UV[][] = [UPPER_TRACE, LOWER_TRACE]
 
 /** Delay (0..1) for the current wave at horizontal position x: the back of the head first, the face last. */

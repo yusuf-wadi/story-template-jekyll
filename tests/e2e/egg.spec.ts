@@ -37,6 +37,7 @@ test('completed circuit: links, two traces to an open eye; card lists Now/Next; 
   expect(await eye(page).evaluate((e) => e.tagName)).toBe('BUTTON')
   await expect(page.locator('[data-egg-link]')).toHaveCount(7)
   await expect(page.locator('[data-egg-trace]')).toHaveCount(2)
+  await expect(page.locator('.eye-rim.is-on')).toHaveCount(2) // head and bubble rims catch the eye's light
 
   await eye(page).click()
   const card = page.locator('[data-egg-card]')
@@ -63,6 +64,7 @@ test('completed circuit: links, two traces to an open eye; card lists Now/Next; 
   await expect(page.locator('[data-progress]')).toHaveText('0 / 5 regions wired')
   await expect(eye(page)).toHaveCount(0)
   await expect(page.locator('[data-egg-link], [data-egg-trace]')).toHaveCount(0)
+  await expect(page.locator('.eye-rim.is-on')).toHaveCount(0)
   await expect(page.locator('.region.is-pcb')).toHaveCount(0)
   await expect(page.locator('.pcb-trace')).toHaveCount(0)
   expect(await page.evaluate(() => localStorage.getItem('cm-egg-seen-v1'))).toBeNull()
@@ -75,13 +77,13 @@ test('the eye sits on the face: inside the silhouette, outside every lobe, at ey
   const r = await page.evaluate(() => {
     const head = document.querySelector('.head-outline') as SVGPathElement
     const regions = [...document.querySelectorAll<SVGPathElement>('.region')]
-    const almond = document.querySelector('.egg-eye-shape') as SVGPathElement
-    const len = almond.getTotalLength()
+    const shape = document.querySelector('.egg-eye-shape') as SVGPathElement // the symbol's outline: plates and curved plate
+    const len = shape.getTotalLength()
     // eye-local → head source coordinates
-    const m = (head.parentNode as SVGGraphicsElement).getCTM()!.inverse().multiply(almond.getCTM()!)
+    const m = (head.parentNode as SVGGraphicsElement).getCTM()!.inverse().multiply(shape.getCTM()!)
     let inHead = true, inLobe = false
     for (let s = 0; s < len; s += 1) {
-      const p = almond.getPointAtLength(s)
+      const p = shape.getPointAtLength(s)
       const q = new DOMPoint(p.x, p.y).matrixTransform(m)
       if (!head.isPointInFill(q)) inHead = false
       if (regions.some((g) => g.isPointInFill(q))) inLobe = true

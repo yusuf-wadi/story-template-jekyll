@@ -2,12 +2,14 @@
 //   (1) the facing edge pads of neighbouring lobes are bridged,
 //   (2) current runs through the whole board as a wave from the back of the head to the front,
 //   (3) two glowing traces leave the frontal and temporal lobes and run down to the face,
-//   (4) where an eye, seen in profile, opens: the upper lid swings up about its back end, the eyeball lights, it glows.
+//   (4) where an eye, seen in profile and drawn as a schematic symbol, opens: its plates start shorted together, the
+//       upper plate lifts, the curved plate charges, a faint glow settles on it.
 // The eye is a button: it opens one card with what he's working on now and what's next. "rewire" resets.
 
 import type { Item } from '../types'
 import { esc, placeCard, renderBody, safeHref, MARGIN, NARROW } from '../reader/card'
-import { bridge, BALL_D, EYE, EYE_SHAPE, EYE_TRACES, IRIS_D, LID_MASK_D, LOWER_D, PUPIL, UPPER_D, lidTransform, toD, waveAt, type UV } from './layout'
+import { bridge, ARC_D, EYE, EYE_SHAPE, EYE_TRACES, LOWER_D, PLATE_MASK, PLUS_D, UPPER_D, leadTailD, plateTransform, toD, waveAt, type UV } from './layout'
+import './egg.css'
 
 export interface EggProfile {
   /** Head `<g>`: source coordinates of region outlines, PCBs and edge pads. */
@@ -19,7 +21,7 @@ export const TIMING = {
   link: 520, linkStagger: 90, // bridges between lobes draw in
   wave: 900, spike: 1100, // current: the wave front crosses the head in `wave`; each trace carries spikes for `spike`
   trace: 950, traceStagger: 140, // the traces to the eye draw in as the wave reaches the front
-  lids: 750, iris: 600, // the eye opens, then the iris lights
+  lids: 750, charge: 650, // the upper plate lifts, then the curved plate charges
 }
 
 const NS = 'http://www.w3.org/2000/svg'
@@ -61,7 +63,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     return a
   }
   const at = (ms: number, fn: () => void) => { timers.push(window.setTimeout(() => { if (alive) fn() }, ms)) }
-  // The lid morphs its path every frame (path morphing isn't animatable everywhere), so it runs on rAF.
+  // The plate moves its transform every frame (path morphing isn't animatable everywhere), so it runs on rAF.
   const frames = new Set<number>()
   const tween = (ms: number, fn: (k: number) => void) => {
     const t0 = performance.now()
@@ -125,32 +127,37 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     return { g, glow, copper, pad }
   })
 
-  // The eye, in profile, drawn as Yusuf sketched it: a "C" eyeball bulging toward the face between two lid strokes.
-  // The eyeball and iris are clipped to everything below the upper lid, which swings about its back end.
+  // The eye, in profile, as a schematic symbol: long upper plate, short lower plate, and the curved plate of a
+  // polarized capacitor at the front. The curved plate is clipped to everything below the upper plate, so the
+  // plate uncovers it as it lifts; the upper lead's tail stretches down to the plate while it is lowered.
   const uid = Math.random().toString(36).slice(2, 8)
   const maskId = `egg-eye-mask-${uid}`
   const eye = svg('g', { transform: `translate(${EYE.x} ${EYE.y})` }, 'egg-eye')
-  const halo = svg('ellipse', { cx: -4, cy: 0, rx: EYE.rx * 1.35, ry: EYE.ry * 1.45 }, 'egg-eye-halo')
   const maskClip = svg('clipPath', { id: maskId })
-  const mask = svg('path', { d: LID_MASK_D })
+  const mask = svg('rect', PLATE_MASK)
   maskClip.append(mask)
-  const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-eye-ball')
-  const arc = svg('path', { d: BALL_D }, 'egg-eye-arc')
-  const iris = svg('g', {}, 'egg-eye-iris')
-  iris.append(svg('path', { d: IRIS_D }, 'egg-eye-irisarc'), svg('circle', PUPIL, 'egg-eye-pupil'))
-  ball.append(svg('path', { d: EYE_SHAPE }, 'egg-eye-white egg-eye-shape'), arc, iris)
-  const lower = svg('path', { d: LOWER_D }, 'egg-eye-rim egg-eye-lower')
-  const lid = svg('path', { d: UPPER_D }, 'egg-eye-rim egg-eye-upper')
-  /** Openness: 0 shut (upper lid swung down onto the lower), 1 open. */
+  const shape = svg('path', { d: EYE_SHAPE, fill: 'none', stroke: 'none' }, 'egg-eye-shape') // the outline the e2e checks
+  const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-sym-ball')
+  const arcGlow = svg('path', { d: ARC_D }, 'egg-sym-glow')
+  const arc = svg('path', { d: ARC_D }, 'egg-sym-arc')
+  const charge = svg('path', { d: ARC_D }, 'egg-sym-charge')
+  ball.append(arcGlow, arc, charge)
+  const lower = svg('path', { d: LOWER_D }, 'egg-sym-plate')
+  const tail = svg('path', { d: leadTailD(0) }, 'egg-sym-plate egg-sym-tail')
+  const upper = svg('g', {}, 'egg-sym-upper')
+  upper.append(svg('path', { d: UPPER_D }, 'egg-sym-plate'), svg('path', { d: PLUS_D }, 'egg-sym-plus'))
+  /** Openness: 0 shut (plates together), 1 open. */
   const setLid = (t: number) => {
-    const tf = lidTransform(t)
+    const tf = plateTransform(t)
     mask.setAttribute('transform', tf)
-    lid.setAttribute('transform', tf)
+    upper.setAttribute('transform', tf)
+    tail.setAttribute('d', leadTailD(Math.min(1, t)))
   }
   setLid(0)
-  eye.append(maskClip, halo, ball, lower, lid)
+  eye.append(maskClip, shape, ball, tail, lower, upper)
   board.append(eye)
   head.append(board)
+  const announce = (open: boolean) => window.dispatchEvent(new CustomEvent('egg-eye', { detail: { open } }))
 
   // ---------------------------------------------------------------- HTML: eye button, rewire, card
   const stage = head.ownerSVGElement?.parentElement ?? root
@@ -266,6 +273,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     eye.classList.add('is-open')
     eye.style.visibility = ''
     setLid(1)
+    announce(true)
     button.hidden = false
     button.dataset.state = 'open'
     rewire.hidden = false
@@ -346,24 +354,24 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
 
   const t3 = t2 + (traces.length - 1) * T.traceStagger + T.trace
   at(t3 - T.trace * 0.45, () => {
-    // The shut eye fades in as the traces arrive: the lower lid, and the upper one swung down onto it.
+    // The shut eye fades in as the traces arrive: both plates together, shorted.
     eye.style.visibility = ''
     play(eye, [{ opacity: 0 }, { opacity: 1 }], { duration: T.trace * 0.45, easing: 'ease-in' })
   })
   at(t3, () => {
-    // The upper lid swings up about its back end (a touch past open, then settles); the eyeball's C and the iris
-    // light; then the halo blooms.
+    // The upper plate lifts off the lower one (a touch past open, then settles); the curved plate it uncovers
+    // charges from top to bottom; then its faint glow comes up and the glass rims catch it.
     eye.classList.add('is-open')
     const ease = (k: number) => 1 - Math.pow(1 - k, 3)
     tween(T.lids, (k) => setLid(k < 0.8 ? 1.06 * ease(k / 0.8) : 1.06 - 0.06 * ((k - 0.8) / 0.2)))
-    play(arc, [{ opacity: 0.35 }, { opacity: 1, offset: 0.6 }, { opacity: 1 }], { duration: T.lids, easing: 'ease-out' })
-    play(iris, [{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }],
-      { duration: T.lids + T.iris, easing: 'ease-out' })
-    play(halo, [{ opacity: 0 }, { opacity: 0, offset: 0.45 }, { opacity: 1, offset: 0.78 }, { opacity: 0.7 }],
-      { duration: T.lids + T.iris + 300, easing: 'ease-out' })
+    const len = pathLen(charge)
+    const o = { duration: T.charge, delay: T.lids * 0.55, easing: 'cubic-bezier(.4,0,.3,1)', fill: 'backwards' as const }
+    play(charge, drawIn(len), o)
+    play(arcGlow, [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { ...o, duration: T.charge + 300 })
+    at(T.lids * 0.55 + T.charge * 0.6, () => announce(true))
   })
   at(t3 + T.lids * 0.6, () => { button.hidden = false; button.dataset.state = 'open' })
-  at(t3 + T.lids + T.iris + 300, () => {
+  at(t3 + T.lids + T.charge + 300, () => {
     rewire.hidden = false
     play(rewire, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 })
     playing = false
@@ -381,6 +389,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     hideWatch.disconnect()
     head.querySelector('.egg-pulse')?.remove()
     board.remove()
+    announce(false)
     button.remove()
     rewire.remove()
     card.remove()

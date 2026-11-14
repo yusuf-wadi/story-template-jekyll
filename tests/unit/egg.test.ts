@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bridge, BALL_BOTTOM, BALL_TOP, EYE, EYE_TRACES, LID_FRONT, LID_HINGE, LOWER_LID, LOWER_TRACE, UPPER_TRACE, lidY, onLid, waveAt } from '../../src/egg/layout'
+import { bridge, ARC_BOTTOM, ARC_TOP, EYE, EYE_TRACES, LEAD_X, LOWER_PLATE, LOWER_TRACE, SHUT_DROP, UPPER_PLATE, UPPER_TRACE, leadTailD, plateDrop, waveAt } from '../../src/egg/layout'
 
 type P = [number, number]
 const segOk = (a: P, b: P) => {
@@ -30,36 +30,47 @@ describe('eye traces', () => {
     expect(LOWER_TRACE[0][0]).toBeLessThan(370)
     for (const p of UPPER_TRACE.slice(1)) expect(p[0]).toBeLessThan(330)
   })
-  it('the upper one drops onto the open upper lid where the C begins; the lower one climbs into the lower lid’s back end', () => {
-    const up = UPPER_TRACE[UPPER_TRACE.length - 1]
-    expect(up[0] - EYE.x).toBeCloseTo(BALL_TOP[0])
-    expect(up[1] - EYE.y).toBeCloseTo(lidY(BALL_TOP[0]))
-    const low = LOWER_TRACE[LOWER_TRACE.length - 1]
-    expect([low[0] - EYE.x, low[1] - EYE.y]).toEqual(LOWER_LID[1])
-    // a V below the eye: the lower trace dips below the lid before rising into it
+  it('land square-on at the middle of their plates, like schematic leads; the lower one comes up out of a V', () => {
+    const up = UPPER_TRACE[UPPER_TRACE.length - 1], upPrev = UPPER_TRACE[UPPER_TRACE.length - 2]
+    expect([up[0] - EYE.x, up[1] - EYE.y]).toEqual([LEAD_X, UPPER_PLATE[0][1]])
+    expect(upPrev[0]).toBe(up[0]) // drops vertically onto the plate
+    const low = LOWER_TRACE[LOWER_TRACE.length - 1], lowPrev = LOWER_TRACE[LOWER_TRACE.length - 2]
+    expect([low[0] - EYE.x, low[1] - EYE.y]).toEqual([LEAD_X, LOWER_PLATE[0][1]])
+    expect(lowPrev[0]).toBe(low[0])
+    expect(lowPrev[1]).toBeGreaterThan(low[1]) // rises into it from below
+    for (const pl of [UPPER_PLATE, LOWER_PLATE]) {
+      expect(LEAD_X).toBeGreaterThan(pl[0][0])
+      expect(LEAD_X).toBeLessThan(pl[1][0])
+    }
     expect(Math.max(...LOWER_TRACE.map((p) => p[1]))).toBeGreaterThan(low[1] + 20)
   })
 })
 
-describe('profile eye', () => {
-  it('is a C bulging toward the face between two lids that run back from it; the upper lid is longer', () => {
-    expect(LID_HINGE[0]).toBeGreaterThan(0) // the head faces left: the lids run back, behind the eye's centre
-    expect(LID_FRONT[0]).toBeLessThan(LOWER_LID[0][0]) // the upper lid overhangs the front
-    expect(LID_HINGE[0] - LID_FRONT[0]).toBeGreaterThan(LOWER_LID[1][0] - LOWER_LID[0][0])
-    expect(BALL_TOP[1]).toBeCloseTo(lidY(BALL_TOP[0]))
-    expect(BALL_BOTTOM[1]).toBe(LOWER_LID[0][1])
-    expect(LOWER_LID[1][1] - LID_HINGE[1]).toBeGreaterThan(EYE.ry * 1.5)
+describe('profile eye (schematic symbol)', () => {
+  it('long upper plate, short lower plate, both level and running back; a C plate bulging toward the face between them', () => {
+    const len = (p: [P, P]) => p[1][0] - p[0][0]
+    expect(UPPER_PLATE[0][1]).toBe(UPPER_PLATE[1][1])
+    expect(LOWER_PLATE[0][1]).toBe(LOWER_PLATE[1][1])
+    expect(len(UPPER_PLATE)).toBeGreaterThan(len(LOWER_PLATE) * 1.3)
+    expect(UPPER_PLATE[1][0]).toBeGreaterThan(0) // the head faces left: the plates run back
+    expect(UPPER_PLATE[0][0]).toBeLessThan(LOWER_PLATE[0][0])
+    // the curved plate sits between the plates without touching them, at the front
+    expect(ARC_TOP[1]).toBeGreaterThan(UPPER_PLATE[0][1])
+    expect(ARC_BOTTOM[1]).toBeLessThan(LOWER_PLATE[0][1])
+    expect(Math.max(ARC_TOP[0], ARC_BOTTOM[0])).toBeLessThan(LEAD_X)
+    expect(LOWER_PLATE[0][1] - UPPER_PLATE[0][1]).toBeGreaterThan(EYE.ry * 1.5)
   })
-  it('swings about its back end: open, it lies on its drawn line; shut, its front end rests on the lower lid', () => {
-    for (const t of [0, 0.5, 1]) expect(onLid(LID_HINGE, t)).toEqual(LID_HINGE)
-    const open = onLid(LID_FRONT, 1)
-    expect(open[0]).toBeCloseTo(LID_FRONT[0])
-    expect(open[1]).toBeCloseTo(LID_FRONT[1])
-    const shut = onLid(LID_FRONT, 0)
-    expect(shut[1]).toBeCloseTo(LOWER_LID[0][1])
-    expect(shut[0]).toBeGreaterThan(LOWER_LID[0][0])
-    expect(shut[0]).toBeLessThan(LOWER_LID[1][0])
-    expect(onLid(LID_FRONT, 0.5)[1]).toBeGreaterThan(open[1]) // it rises as it opens
+  it('opens from shorted: shut, the upper plate rests just above the lower; open, on its drawn line', () => {
+    expect(plateDrop(1)).toBe(0)
+    const shutY = UPPER_PLATE[0][1] + plateDrop(0)
+    expect(shutY).toBe(UPPER_PLATE[0][1] + SHUT_DROP)
+    expect(LOWER_PLATE[0][1] - shutY).toBeGreaterThan(0)
+    expect(LOWER_PLATE[0][1] - shutY).toBeLessThanOrEqual(4)
+    expect(shutY).toBeGreaterThan(ARC_BOTTOM[1]) // shut, the curved plate is all covered
+    expect(plateDrop(0.5)).toBeLessThan(plateDrop(0))
+    // the upper lead's tail follows the plate down and vanishes when open
+    expect(leadTailD(1)).toBe(`M${LEAD_X} ${UPPER_PLATE[0][1]} V${UPPER_PLATE[0][1]}`)
+    expect(leadTailD(0)).toBe(`M${LEAD_X} ${UPPER_PLATE[0][1]} V${shutY}`)
   })
 })
 

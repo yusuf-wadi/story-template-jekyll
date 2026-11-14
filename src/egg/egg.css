@@ -1,0 +1,25 @@
+/* The eye as a schematic symbol, and restrained glow for the egg's traces. */
+.egg-sym-plate { fill: none; stroke: var(--trace-lit); stroke-width: 2.6; stroke-linecap: round; }
+.egg-sym-upper .egg-sym-plate { stroke: var(--trace-hi); }
+.egg-sym-plus { fill: none; stroke: var(--trace); stroke-width: 1.2; stroke-linecap: round; opacity: .6; }
+.egg-sym-arc { fill: none; stroke: var(--trace); stroke-width: 2.6; stroke-linecap: round; opacity: .4; }
+.egg-sym-charge { fill: none; stroke: var(--trace-hi); stroke-width: 2.6; stroke-linecap: round; }
+/* a tight, faint glow hugging the curved plate: no bloom */
+.egg-sym-glow { fill: none; stroke: var(--trace-hi); stroke-width: 4.6; stroke-linecap: round; stroke-opacity: .28; filter: blur(1.6px); }
+.egg-eye:not(.is-open) .egg-sym-ball { opacity: 0; }
+
+/* the feed traces and bridges: the same restraint */
+.egg-board .egg-link-glow, .egg-board .egg-trace-glow { stroke-width: 4.4; stroke-opacity: .2; filter: blur(1.4px); }
+.egg-board .egg-trace-pad { filter: drop-shadow(0 0 1px var(--trace-hi)); }
+
+/* the glass rims catch the eye's light (see profile/light.ts) */
+.eye-rim { fill: none; stroke-width: 1.5; pointer-events: none; opacity: 0; transition: opacity .8s; }
+.writing-mark .eye-rim { stroke-width: 1; vector-effect: non-scaling-stroke; }
+.eye-rim.is-on { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .egg-eye.is-open .egg-sym-glow { animation: egg-sym-breathe 4.2s ease-in-out infinite; }
+  .eye-rim.is-on { animation: egg-rim-breathe 4.2s ease-in-out infinite; }
+}
+@keyframes egg-sym-breathe { 0%, 100% { stroke-opacity: .22; } 50% { stroke-opacity: .32; } }
+@keyframes egg-rim-breathe { 0%, 100% { stroke-opacity: .8; } 50% { stroke-opacity: 1; } }
