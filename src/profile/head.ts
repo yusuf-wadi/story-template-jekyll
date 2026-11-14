@@ -30,4 +30,9 @@ const regions = (Object.keys(REGION_PATHS) as Region[])
 
 export const HEAD_SVG =
   `<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Head profile map">` +
-  `<g transform="${HEAD_TRANSFORM}"><path class="head-outline" d="${OUTLINE}"/>${regions}</g></svg>`
+  `<defs>` +
+  `<linearGradient id="head-glass-fill" gradientUnits="userSpaceOnUse" x1="0" y1="100" x2="0" y2="900"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="0.55" stop-color="#cfe4ff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0.08"/></linearGradient>` +
+  `<linearGradient id="head-glass-rim" gradientUnits="userSpaceOnUse" x1="680" y1="100" x2="240" y2="640"><stop offset="0" stop-color="#fff" stop-opacity="0.5"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0.05"/></linearGradient>` +
+  `<linearGradient id="head-glass-streak" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="480"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.07"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+  `</defs>` +
+  `<g transform="${HEAD_TRANSFORM}"><path class="head-outline" d="${OUTLINE}"/><path class="head-streak" d="M 330 190 C 400 150 470 140 540 150 L 520 168 C 460 162 400 175 345 210 Z"/>${regions}</g></svg>`

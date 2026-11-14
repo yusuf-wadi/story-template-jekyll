@@ -1,4 +1,4 @@
-:root { --region-rest: 0.12; --region-hover: 0.35; --fg: #fff; }
+:root { --region-rest: 0.05; --region-hover: 0.3; --fg: #fff; }
 html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-family: system-ui, sans-serif; }
 #app { height: 100%; }
 [hidden] { display: none !important; }
@@ -10,8 +10,9 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .corner-link:hover, .corner-link:focus-visible { opacity: 1; }
 .stage { position: relative; width: min(100vw, 100vh, 800px); aspect-ratio: 1; }
 .stage svg { width: 100%; height: 100%; display: block; }
-.head-outline { fill: #fff; fill-opacity: .04; stroke: #fff; stroke-opacity: .25; stroke-width: 2; }
-.region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .2; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
+.head-outline { fill: url(#head-glass-fill); fill-opacity: .022; stroke: url(#head-glass-rim); stroke-width: 1.5; }
+.head-streak { fill: url(#head-glass-streak); stroke: none; pointer-events: none; }
+.region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
 .region:hover, .region.is-hover { fill-opacity: var(--region-hover); }
 .region:focus-visible { stroke-opacity: 1; stroke-width: 3; }
 .writing-mark { position: absolute; left: 7%; top: 59%; font-size: .7rem; letter-spacing: .08em; color: var(--fg); opacity: .4; text-decoration: none; }
