@@ -92,15 +92,18 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .egg-link:not(.is-on), .egg-trace:not(.is-on) { opacity: 0; }
 .egg-spike { fill: none; stroke: #fff4d6; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1.6 5 1.6 30; filter: drop-shadow(0 0 2px var(--copper-hi)); }
 .is-booted .pcb-chip { stroke: var(--copper-hi); stroke-opacity: .55; transition: stroke .8s, stroke-opacity .8s; }
-.egg-eye-halo { fill: var(--copper-hi); opacity: 0; filter: blur(9px); }
+.egg-eye-halo { fill: var(--copper-hi); opacity: 0; filter: blur(10px); }
 .egg-eye-white { fill: #120d06; }
 .egg-eye-irisdisc { fill: var(--copper); }
 .egg-eye-pupil { fill: #050605; }
 .egg-eye-glint { fill: #fff8e6; }
-.egg-eye-rim { fill: none; stroke: var(--copper-hi); stroke-width: 1.6; stroke-linejoin: round; }
-.egg-eye-closed { fill: none; stroke: var(--copper); stroke-opacity: .7; stroke-width: 1.6; stroke-linecap: round; }
-.egg-eye:not(.is-open) .egg-eye-lids, .egg-eye:not(.is-open) .egg-eye-halo { opacity: 0; }
-.egg-eye.is-open .egg-eye-closed { opacity: 0; }
+.egg-eye-cornea { fill: none; stroke: #fff8e6; stroke-opacity: .55; stroke-width: 1; }
+.egg-eye-rim { fill: none; stroke: var(--copper-hi); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.egg-eye-upper { stroke-width: 1.9; }
+.egg-eye-lower { stroke-opacity: .75; stroke-width: 1.3; }
+.egg-eye-crease { fill: none; stroke: var(--copper-hi); stroke-opacity: .3; stroke-width: 1; stroke-linecap: round; }
+.egg-eye-lashes { fill: none; stroke: var(--copper-hi); stroke-opacity: .8; stroke-width: 1.1; stroke-linecap: round; }
+.egg-eye:not(.is-open) .egg-eye-ball, .egg-eye:not(.is-open) .egg-eye-halo { opacity: 0; }
 .egg-eye.is-open .egg-eye-halo { opacity: .7; animation: egg-glow 4.2s ease-in-out infinite; }
 .egg-eye.is-open .egg-eye-irisdisc { animation: egg-iris 4.2s ease-in-out infinite; }
 @keyframes egg-glow { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }

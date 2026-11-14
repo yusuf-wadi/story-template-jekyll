@@ -75,9 +75,9 @@ test('the eye sits on the face: inside the silhouette, outside every lobe, at ey
   const r = await page.evaluate(() => {
     const head = document.querySelector('.head-outline') as SVGPathElement
     const regions = [...document.querySelectorAll<SVGPathElement>('.region')]
-    const almond = document.querySelector('.egg-eye-almond') as SVGPathElement
+    const almond = document.querySelector('.egg-eye-shape') as SVGPathElement
     const len = almond.getTotalLength()
-    // almond-local → head source coordinates
+    // eye-local → head source coordinates
     const m = (head.parentNode as SVGGraphicsElement).getCTM()!.inverse().multiply(almond.getCTM()!)
     let inHead = true, inLobe = false
     for (let s = 0; s < len; s += 1) {

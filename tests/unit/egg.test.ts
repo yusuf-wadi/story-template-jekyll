@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bridge, EYE, EYE_TRACE, waveAt } from '../../src/egg/layout'
+import { bridge, EYE, EYE_O, EYE_TRACE, LOWER_LID, lidAt, upperLid, waveAt } from '../../src/egg/layout'
 
 type P = [number, number]
 const segOk = (a: P, b: P) => {
@@ -26,6 +26,22 @@ describe('eye trace', () => {
     expect(EYE_TRACE[EYE_TRACE.length - 1]).toEqual([EYE.x + EYE.rx, EYE.y])
     // stays in front of the temporal board (its front edge is x = 330)
     for (const p of EYE_TRACE) if (p[1] >= 380) expect(p[0]).toBeLessThan(330 - 20)
+  })
+})
+
+describe('profile eye', () => {
+  it('hinges both lids at the outer corner, at the back; shut, the upper lid lies on the lower one', () => {
+    expect(EYE_O[0]).toBeGreaterThan(0) // the head faces left: the corner is behind the eye's centre
+    for (const t of [0, 0.5, 1]) expect(lidAt(upperLid(t), 0)).toEqual(EYE_O)
+    for (const s of [0.25, 0.5, 0.75, 1]) {
+      const shut = lidAt(upperLid(0), s), low = lidAt(LOWER_LID, s)
+      expect(Math.hypot(shut[0] - low[0], shut[1] - low[1])).toBeLessThan(1.5)
+    }
+  })
+  it('opens toward the front: the open upper lid ends above and in front of the lower lid’s end', () => {
+    const up = lidAt(upperLid(1), 1), low = lidAt(LOWER_LID, 1)
+    expect(up[0]).toBeLessThan(0)
+    expect(low[1] - up[1]).toBeGreaterThan(EYE.ry * 1.5)
   })
 })
 
