@@ -416,68 +416,50 @@
     "worlds": {
       "nodes": [
         {
-          "id": "liminal-bevy",
-          "pos": [
-            -1.357,
-            -2.984,
-            -5.499
-          ],
-          "cluster": null
-        },
-        {
           "id": "rarephish",
           "pos": [
-            -2.554,
-            -4.805,
-            4.289
+            -2.278,
+            -7.075,
+            0.0
           ],
           "cluster": null
         },
         {
           "id": "vr-modding",
           "pos": [
-            7.874,
-            1.229,
-            0.7
+            7.812,
+            1.726,
+            -0.0
           ],
           "cluster": null
         },
         {
           "id": "tiltshift",
           "pos": [
-            -3.963,
-            6.56,
-            0.51
+            -5.533,
+            5.349,
+            0.0
           ],
           "cluster": null
         }
       ],
       "clusters": [],
       "tour": [
-        "liminal-bevy",
         "rarephish",
         "tiltshift",
         "vr-modding"
       ],
       "edges": [
         [
-          "liminal-bevy",
-          "rarephish"
-        ],
-        [
-          "liminal-bevy",
+          "rarephish",
           "tiltshift"
         ],
         [
-          "liminal-bevy",
+          "rarephish",
           "vr-modding"
         ],
         [
-          "rarephish",
-          "tiltshift"
-        ],
-        [
-          "rarephish",
+          "tiltshift",
           "vr-modding"
         ]
       ]

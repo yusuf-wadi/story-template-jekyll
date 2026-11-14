@@ -453,23 +453,6 @@
       "status": null
     },
     {
-      "id": "liminal-bevy",
-      "section": "worlds",
-      "title": "Liminal Bevy",
-      "dates": "Oct 2026",
-      "summary": "A passion project: a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL. I wrote the story, made the designs and designed the architecture.",
-      "body": "Liminal Bevy is a passion project. I wrote the story, I made the designs, I designed the architecture, and every design choice was mine. It is also my first large-scale build with agentic workflows: AI agents wrote the code to my design.\n\nThe game grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.",
-      "tags": [
-        "Rust",
-        "Bevy",
-        "WGSL",
-        "procedural generation",
-        "games"
-      ],
-      "links": [],
-      "status": null
-    },
-    {
       "id": "rarephish",
       "section": "worlds",
       "title": "Rarephish",
@@ -597,13 +580,19 @@
       "status": null
     },
     {
-      "id": "next-one",
+      "id": "the-annex",
       "section": "next",
-      "title": "[YUSUF TO WRITE]",
-      "dates": "",
-      "summary": "[YUSUF TO WRITE]",
-      "body": "[YUSUF TO WRITE]",
-      "tags": [],
+      "title": "The Annex",
+      "dates": "2026",
+      "summary": "I'm building The Annex, a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL. I wrote the story, made the designs and designed the architecture. It isn't finished yet.",
+      "body": "I'm building The Annex, a first-person game of procedural liminal spaces. I wrote the story, I made the designs, I designed the architecture, and every design choice was mine. It's my first large-scale build with agentic workflows: AI agents write the code to my design.\n\nIt's written in Rust with Bevy and WGSL. Rooms and corridors are grown from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.\n\nIt's still in progress. I'll share it properly when it's finished.",
+      "tags": [
+        "Rust",
+        "Bevy",
+        "WGSL",
+        "procedural generation",
+        "in progress"
+      ],
       "links": [],
       "status": "now"
     },
