@@ -20,6 +20,16 @@ test('reader shows title and position, arrows step and wrap', async ({ page }) =
   await expect(page).toHaveURL(new RegExp(`#projects/${tour[tour.length - 1]}$`))
 })
 
+test('the card\'s ‹ › buttons step the tour after the full open animation', async ({ page }) => {
+  await page.goto(`/#projects/${tour[0]}`)                   // no ?e2e: the real morph, which once left them unpressable
+  const dlg = page.getByRole('dialog')
+  await expect(dlg).toContainText(`1 / ${tour.length}`)
+  await dlg.getByRole('button', { name: 'Next' }).click()
+  await expect(page).toHaveURL(new RegExp(`#projects/${tour[1]}$`))
+  await dlg.getByRole('button', { name: 'Previous' }).click()
+  await expect(page).toHaveURL(new RegExp(`#projects/${tour[0]}$`))
+})
+
 test('Escape goes item -> section -> profile', async ({ page }) => {
   await page.goto(`/?e2e#projects/${tour[0]}`)
   await expect(page.getByRole('dialog')).toBeVisible()

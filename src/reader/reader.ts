@@ -169,6 +169,7 @@ export function mountReader(root: HTMLElement, opts: ReaderOptions = {}): Reader
       rect = mixRect(circle, card, k)
       radii = `${Math.min(mix(a.r, RADIUS, k), rect.w / 2, rect.h / 2)}px`
       content = clamp01((k - 0.55) / 0.45)
+      if (content > 0.999) content = 1          // float drift (0.9999…) would leave the controls unpressable
     }
     const [nr, ng, nb] = rgb(a.color)
     const bg = clamp01((k - 0.08) / 0.5)
