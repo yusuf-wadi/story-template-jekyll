@@ -30,3 +30,35 @@ test('hovering a node dims non-neighbors and keeps neighbors lit', async ({ page
   await expect.poll(() => op(far)).toBeLessThan(0.3)
   await expect.poll(() => op(near)).toBeGreaterThan(0.6)
 })
+
+for (const kind of ['pointercancel', 'lostpointercapture']) {
+  test(`a node drag interrupted by ${kind} releases the node and re-enables orbit`, async ({ page }) => {
+    await page.goto('/?e2e#projects')
+    await page.waitForFunction(() => (window as any).__cm?.dragState)
+    await page.waitForTimeout(500)
+    const id = proj.nodes[0].id
+    const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), id)
+    await page.mouse.move(p.x, p.y)
+    await page.mouse.down()
+    await page.mouse.move(p.x + 30, p.y + 20, { steps: 4 })
+    expect(await page.evaluate(() => (window as any).__cm.dragState())).toEqual({ dragging: true, pressed: true, orbit: false, pinned: true })
+    await page.evaluate((k) => document.querySelector('.scene-host canvas')!.dispatchEvent(new PointerEvent(k, { pointerId: 1, bubbles: true })), kind)
+    expect(await page.evaluate(() => (window as any).__cm.dragState())).toEqual({ dragging: false, pressed: false, orbit: true, pinned: false })
+    await page.mouse.up()
+    await expect(page).toHaveURL(/#projects$/) // the release is not a click
+  })
+}
+
+test('leaving the section mid-drag resets the drag', async ({ page }) => {
+  await page.goto('/?e2e#projects')
+  await page.waitForFunction(() => (window as any).__cm?.dragState)
+  await page.waitForTimeout(500)
+  const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), proj.nodes[0].id)
+  await page.mouse.move(p.x, p.y)
+  await page.mouse.down()
+  await page.mouse.move(p.x + 30, p.y + 20, { steps: 4 })
+  await page.keyboard.press('Escape')
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('')
+  expect(await page.evaluate(() => (window as any).__cm.dragState())).toEqual({ dragging: false, pressed: false, orbit: true, pinned: false })
+  await page.mouse.up()
+})

@@ -223,6 +223,16 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     }
     if (!dive) pick()
   })
+  /** Drop any press/drag: release the pinned node and give orbit back. */
+  function resetDrag() {
+    if (down?.id) { sim?.pin(down.id, null); awake = true }
+    down = null
+    dragging = false
+    controls.enabled = true
+  }
+  // The OS can take the pointer mid-drag (touch scroll, alt-tab, capture loss): never leave a node pinned.
+  el.addEventListener('pointercancel', resetDrag)
+  el.addEventListener('lostpointercapture', resetDrag)
   el.addEventListener('pointerleave', () => {
     if (down?.id) return
     pointer = null; fields?.setHighlight(null); setHoverNode(null); emitHover(null)
@@ -376,7 +386,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     if (sim && view) {
       view.sync(sim.positions, reduced ? Infinity : dt)
       const lit = hoverId ? new Set([hoverId, ...view.neighbors.get(hoverId)!]) : null
-      labels.update(camera, sim.positions, lit ? new Set([...view.meshes.keys()].filter((i) => !lit.has(i))) : null)
+      const v0 = view
+      labels.update(camera, sim.positions, lit ? new Set([...view.meshes.keys()].filter((i) => !lit.has(i))) : null,
+        (id) => (id === hoverId ? 1000 : id === selected ? 900 : lit?.has(id) ? 100 : 0) + v0.neighbors.get(id)!.size)
     }
     renderer.render(scene, camera)
   }
@@ -426,6 +438,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       finishDive()
       setHoverNode(null)
       emitHover(null)
+      resetDrag()
       selected = null
       view?.setFocus(null)
       if (from && !reduced && !host.hidden && sim) { focusTween = null; startDive('out', from); return }
@@ -485,6 +498,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       holdDive: (t: number | null) => { heldT = t },
       reveal: () => view?.reveal() ?? null,
       particles: () => dive?.points ? dive.ids.length : 0,
+      dragState: () => ({ dragging, pressed: !!down, orbit: controls.enabled, pinned: sim?.pinned() ?? false }),
       labelText: (id: string) => host.querySelector<HTMLElement>(`[data-node-label="${CSS.escape(id)}"]`)?.textContent ?? null,
     }
   }

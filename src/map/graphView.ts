@@ -10,6 +10,9 @@ const EDGE_HOT = 0.7
 const HALO_ALPHA = 0.22
 const UNVISITED = 0.35
 
+/** Obsidian-small nodes that grow only a little with degree. */
+export const nodeRadius = (degree: number): number => Math.min(0.3, 0.14 + 0.025 * degree)
+
 export interface GraphView {
   group: THREE.Group
   meshes: Map<string, THREE.Mesh>
@@ -57,7 +60,7 @@ export function createGraphView(layout: SectionLayout): GraphView {
   for (const n of layout.nodes) {
     const color = new THREE.Color(n.cluster === null ? NEUTRAL : clusterColor(n.cluster))
     hue.set(n.id, color)
-    const radius = 0.18 + 0.05 * neighbors.get(n.id)!.size
+    const radius = nodeRadius(neighbors.get(n.id)!.size)
     // Soft-lit: mostly emissive (keeps the hue on black) with a gentle top light for roundness.
     const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color, emissive: color, transparent: true }))
     mesh.scale.setScalar(radius)
