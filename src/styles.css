@@ -153,3 +153,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .list-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; margin: 12px 0 0; }
 .lit-rim { fill: none; stroke-width: 1.5; opacity: 0; pointer-events: none; transition: opacity .5s; }
 .writing-mark .lit-rim { stroke-width: 1; vector-effect: non-scaling-stroke; }
+/* ---- the dive: a frozen copy of the profile pushes into the lobe; on exit the real one pulls back out */
+.dive-ghost { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; overflow: hidden; pointer-events: none; will-change: transform, opacity; }
+.dive-ghost, .dive-ghost * { animation: none !important; transition: none !important; }
+.profile.is-diving { position: fixed; inset: 0; z-index: 3; will-change: transform, opacity; }

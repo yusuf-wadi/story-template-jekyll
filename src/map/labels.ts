@@ -5,6 +5,8 @@ export interface Labels {
   /** Position each label beside its node; ids in `dim` fade to 0.15, the rest fade with camera distance. */
   update(camera: THREE.Camera, positions: Map<string, THREE.Vector3>, dim: Set<string> | null): void
   clear(): void
+  /** Whole-layer fade (0..1) for the dive. */
+  setReveal(k: number): void
 }
 
 /** Distance (world units) at which labels are fully opaque, and where they bottom out. */
@@ -56,5 +58,6 @@ export function createLabels(host: HTMLElement): Labels {
       layer.replaceChildren()
       els = new Map()
     },
+    setReveal(k) { layer.style.opacity = k >= 1 ? '' : k.toFixed(3) },
   }
 }

@@ -1,7 +1,7 @@
 import type { Content, Layout, SectionId } from './types'
 import type { Progress } from './progress'
 import { parseRoute, toHash, type Route } from './router'
-import { mountProfile } from './profile/profile'
+import { mountProfile, type PreparedDive } from './profile/profile'
 import { generatePcb, seedFor } from './profile/pcb'
 import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
@@ -19,6 +19,8 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   }
   // Navigate and render synchronously so rapid input (click then key) never sees a stale route.
   let lastHash: string | null = null
+  // A lobe click measures its dive before navigating; the render that enters the section plays it.
+  let pendingDive: { section: SectionId; dive: PreparedDive | null } | null = null
   function go(hash: string) {
     if (location.hash !== hash && !(hash === '' && location.hash === '')) location.hash = hash
     render()
@@ -26,7 +28,10 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   const profile = mountProfile(root, {
     content,
     progress,
-    onEnter: (section) => go(toHash({ view: 'section', section })),
+    onEnter: (section) => {
+      pendingDive = { section, dive: profile.prepareDive(section) }
+      go(toHash({ view: 'section', section }))
+    },
   })
   const listHost = document.createElement('div')
   listHost.hidden = true
@@ -96,11 +101,15 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   }
 
   const render = () => {
+    const pend = pendingDive
+    pendingDive = null
     if (location.hash === lastHash) return
     lastHash = location.hash
     const route = parseRoute(location.hash, content)
     currentRoute = route
-    scene.cancelTransitions()
+    // Every route change first settles whatever was moving, so an interrupt always lands in the new route's state.
+    const interrupted = scene.cancelTransitions()
+    profile.settleMotion()
     if (route.view !== 'item') reader.close()
     if (route.view !== 'list') listHost.hidden = true
     if (route.view === 'section' || route.view === 'item') {
@@ -112,7 +121,9 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       if (currentSection !== route.section) {
         currentSection = route.section
         const items = content.items.filter((i) => i.section === route.section)
-        void scene.enter(route.section, layout.sections[route.section], items)
+        const dive = route.view === 'section' && pend?.section === route.section ? pend.dive : null
+        void scene.enter(route.section, layout.sections[route.section], items, dive?.from)
+        if (dive) profile.playGhost(dive)
       }
       if (route.view === 'item') {
         const tour = layout.sections[route.section].tour
@@ -124,13 +135,21 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       } else void scene.focus(null)
       return
     }
-    if (currentSection) { currentSection = null; void scene.exit(); hoverLabel.textContent = '' }
+    const left = currentSection
+    if (left) { currentSection = null; hoverLabel.textContent = '' }
     if (route.view === 'profile') {
       listHost.hidden = true
       profile.show()
+      if (left) {
+        // Reverse the dive back into the lobe, unless this exit itself cut a dive short (then land at once).
+        const from = interrupted ? null : profile.diveFrom(left)
+        void scene.exit(from ?? undefined)
+        if (from) profile.pullBack(from)
+      }
       void maybeEgg()
       return
     }
+    if (left) void scene.exit()
     profile.hide()
     if (!listRendered) { renderList(listHost, content); listRendered = true }
     listHost.hidden = false

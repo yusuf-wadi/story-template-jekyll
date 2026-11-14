@@ -6,15 +6,21 @@ import { createForceSim, type ForceSim } from './forceSim'
 import { createGraphView, type GraphView } from './graphView'
 import { createLabels } from './labels'
 import { GAP, CARD_MAX_W, SHEET_H, NARROW } from '../reader/card'
+import { DIVE_MS, FADE_MS, assignParticles, easeInOutCubic, smoothstep, zoomAt, type DiveFrom } from '../dive'
 
 export interface SectionScene {
-  enter(section: SectionId, layout: SectionLayout, items: Item[]): Promise<void>
-  exit(): Promise<void>
+  /** Show a section; with `from`, dive in from that lobe outline (particles become the nodes). */
+  enter(section: SectionId, layout: SectionLayout, items: Item[], from?: DiveFrom): Promise<void>
+  /** Hide the scene; with `from`, first reverse the dive (nodes dissolve back into the outline). */
+  exit(from?: DiveFrom): Promise<void>
   focus(id: string | null): Promise<void>
   onNodeClick(fn: (id: string) => void): void
   onHover(fn: (label: string | null) => void): void
   refresh(): void
-  cancelTransitions(): void
+  /** Snap every running tween (focus, dive) to its end state. True if a dive was cut short. */
+  cancelTransitions(): boolean
+  /** The running dive's direction, if any. */
+  diving(): 'in' | 'out' | null
   /** CSS-px centre, on-screen radius and hue of a node at its current sim position (null when not shown). */
   nodeAnchor(id: string): { x: number; y: number; r: number; color: string } | null
   dispose(): void
@@ -25,6 +31,37 @@ const CLICK_PX = 5
 const PICK_PX = 14
 /** Sim sleeps once kinetic energy per node drops below this (and nothing is pinned). */
 const SLEEP_E = 1e-5
+/** The dive starts (in) / ends (out) this much farther from the target: the camera pushes in as the nodes form. */
+const DOLLY = 1.5
+const SPARK = new THREE.Color(0x6fd8ff)
+
+function dotTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = c.height = 32
+  const g = c.getContext('2d')!
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16)
+  grad.addColorStop(0, 'rgba(255,255,255,1)')
+  grad.addColorStop(0.4, 'rgba(255,255,255,0.5)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, 32, 32)
+  return new THREE.CanvasTexture(c)
+}
+
+type Dive = {
+  dir: 'in' | 'out'
+  t0: number
+  dur: number
+  from: DiveFrom | null
+  cam0: THREE.Vector3
+  cam1: THREE.Vector3
+  points: THREE.Points | null
+  /** Node id per particle, the particle's offset inside its node, and when it leaves the outline (0.15..0.3). */
+  ids: string[]
+  jitter: Float32Array
+  delay: Float32Array
+  fade: Animation | null
+}
 
 export function createSectionScene(host: HTMLElement, isVisited: (id: string) => boolean = () => false): SectionScene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -65,6 +102,14 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   let pointer: { x: number; y: number } | null = null
   let down: { x: number; y: number; id: string | null; plane: THREE.Plane | null } | null = null
   let dragging = false
+  let dive: Dive | null = null
+  /** e2e/screenshots only: pin the dive clock at this progress. */
+  let heldT: number | null = null
+  let dots: THREE.CanvasTexture | null = null
+  const plane = new THREE.Plane()
+  const a3 = new THREE.Vector3()
+  const b3 = new THREE.Vector3()
+  const col = new THREE.Color()
 
   const el = renderer.domElement
   const resize = () => {
@@ -154,6 +199,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   // Capture phase on the host runs before OrbitControls' canvas listener, so a node press never starts an orbit.
   const onDown = (e: PointerEvent) => {
     if (e.target !== el) return
+    if (dive) { finishDive(); return } // a click mid-dive skips to the end
     interacted = true
     const id = nodeAt(e.clientX, e.clientY)
     let plane: THREE.Plane | null = null
@@ -175,7 +221,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       if (raycaster.ray.intersectPlane(down.plane, v)) { sim.pin(down.id, v); awake = true }
       return
     }
-    pick()
+    if (!dive) pick()
   })
   el.addEventListener('pointerleave', () => {
     if (down?.id) return
@@ -205,6 +251,106 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     labels.clear()
   }
 
+  function setReveal(k: number) {
+    view?.setReveal(k)
+    fields?.setReveal(k)
+    labels.setReveal(k)
+  }
+  /** Screen px -> the plane through the orbit target, facing the camera. */
+  function toWorld(x: number, y: number, out: THREE.Vector3) {
+    setRay(x, y)
+    if (!raycaster.ray.intersectPlane(plane, out)) out.copy(controls.target)
+  }
+  function startDive(dir: 'in' | 'out', from: DiveFrom | null) {
+    const target = controls.target
+    const near = camera.position.clone()
+    const far = near.clone().sub(target).multiplyScalar(DOLLY).add(target)
+    const d: Dive = {
+      dir, t0: performance.now(), dur: reduced ? FADE_MS : DIVE_MS, from,
+      cam0: dir === 'in' ? far : near, cam1: dir === 'in' ? near : far,
+      points: null, ids: [], jitter: new Float32Array(0), delay: new Float32Array(0), fade: null,
+    }
+    if (reduced || !from || !from.pts.length || !sim) {
+      if (dir === 'in') d.fade = host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS })
+      dive = d
+      return
+    }
+    camera.position.copy(d.cam0)
+    controls.update()
+    camera.updateMatrixWorld()
+    // particles head for the node on their own side of the outline
+    const nodeIds = [...sim.positions.keys()]
+    const dx = from.origin.x - from.center.x, dy = from.origin.y - from.center.y
+    const nodePx = nodeIds.map((id) => { const p = screenPos(id) ?? { x: from.center.x, y: from.center.y }; return { x: p.x + dx, y: p.y + dy } })
+    d.ids = assignParticles(from.pts, nodePx, from.origin).map((i) => nodeIds[i])
+    const n = d.ids.length
+    d.jitter = new Float32Array(n * 3)
+    d.delay = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      const u = Math.random() * 2 * Math.PI, w = Math.acos(2 * Math.random() - 1), r = 0.7 * Math.cbrt(Math.random())
+      d.jitter.set([r * Math.sin(w) * Math.cos(u), r * Math.sin(w) * Math.sin(u), r * Math.cos(w)], i * 3)
+      d.delay[i] = 0.15 + Math.random() * 0.15 // hold the outline a moment, then dissolve
+    }
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3).setUsage(THREE.DynamicDrawUsage))
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3).setUsage(THREE.DynamicDrawUsage))
+    dots ??= dotTexture()
+    d.points = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 3, sizeAttenuation: false, map: dots, vertexColors: true, transparent: true,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }))
+    d.points.frustumCulled = false
+    d.points.raycast = () => {}
+    scene.add(d.points)
+    dive = d
+    stepDive(0)
+  }
+  function stepDive(t: number) {
+    const d = dive!
+    const e = easeInOutCubic(t)
+    camera.position.lerpVectors(d.cam0, d.cam1, e)
+    if (d.dir === 'in') setReveal(d.points ? smoothstep(0.6, 0.95, t) : 1)
+    else setReveal(1 - smoothstep(0, 0.35, t))
+    if (!d.points || !d.from || !sim || !view) return
+    camera.updateMatrixWorld()
+    plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(a3), controls.target)
+    const pos = d.points.geometry.attributes.position as THREE.BufferAttribute
+    const cols = d.points.geometry.attributes.color as THREE.BufferAttribute
+    const ez = d.dir === 'in' ? e : 1 - e
+    for (let i = 0; i < d.ids.length; i++) {
+      const sp = zoomAt(d.from.pts[i], d.from, ez)
+      toWorld(sp.x, sp.y, a3)
+      const id = d.ids[i]
+      const m = view.meshes.get(id)!
+      const r = m.scale.x
+      b3.set(d.jitter[i * 3], d.jitter[i * 3 + 1], d.jitter[i * 3 + 2]).multiplyScalar(r).add(sim.positions.get(id)!)
+      const k = easeInOutCubic((t - d.delay[i]) / 0.6)
+      if (d.dir === 'in') a3.lerp(b3, k); else a3.copy(b3.lerp(a3, k))
+      pos.setXYZ(i, a3.x, a3.y, a3.z)
+      col.copy(SPARK).lerp(new THREE.Color(view.colorOf(id)!), d.dir === 'in' ? k : 1 - k)
+      cols.setXYZ(i, col.r, col.g, col.b)
+    }
+    pos.needsUpdate = true
+    cols.needsUpdate = true
+    const mat = d.points.material as THREE.PointsMaterial
+    mat.opacity = d.dir === 'in' ? 1 - smoothstep(0.8, 1, t) : smoothstep(0, 0.08, t) * (1 - smoothstep(0.85, 1, t))
+  }
+  function finishDive(): boolean {
+    const d = dive
+    if (!d) return false
+    dive = null
+    d.fade?.cancel()
+    if (d.points) {
+      scene.remove(d.points)
+      d.points.geometry.dispose()
+      ;(d.points.material as THREE.Material).dispose()
+    }
+    setReveal(1)
+    if (d.dir === 'in') { camera.position.copy(d.cam1); controls.update() }
+    else { stop(); host.hidden = true }
+    return true
+  }
+
   function frame(dt: number) {
     if (sim && awake && !reduced) {
       sim.step(dt)
@@ -220,7 +366,12 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       applyShift()
       if (focusTween.t >= 1) focusTween = null
     }
-    controls.autoRotate = !reduced && !interacted && hoverId === null && selected === null
+    if (dive) {
+      const t = heldT ?? Math.min(1, (performance.now() - dive.t0) / dive.dur)
+      stepDive(t)
+      if (t >= 1) { finishDive(); if (!running) return }
+    }
+    controls.autoRotate = !reduced && !interacted && hoverId === null && selected === null && !dive
     controls.update()
     if (sim && view) {
       view.sync(sim.positions, reduced ? Infinity : dt)
@@ -245,7 +396,8 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   function stop() { running = false; cancelAnimationFrame(raf) }
 
   const api: SectionScene = {
-    async enter(_section, layout, items) {
+    async enter(_section, layout, items, from) {
+      finishDive()
       clear()
       titles = new Map(items.map((i) => [i.id, i.title]))
       view = createGraphView(layout)
@@ -268,12 +420,17 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       lastLabel = null
       hoverFn(null)
       start()
+      if (from) startDive('in', from)
     },
-    async exit() {
-      stop()
-      host.hidden = true
+    async exit(from) {
+      finishDive()
       setHoverNode(null)
       emitHover(null)
+      selected = null
+      view?.setFocus(null)
+      if (from && !reduced && !host.hidden && sim) { focusTween = null; startDive('out', from); return }
+      stop()
+      host.hidden = true
     },
     async focus(id) {
       const p = id ? sim?.positions.get(id) : null
@@ -296,7 +453,8 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     onNodeClick(fn) { clickFn = fn },
     onHover(fn) { hoverFn = fn },
     refresh() { view?.refresh(isVisited) },
-    cancelTransitions() { focusTween = null },
+    cancelTransitions() { focusTween = null; return finishDive() },
+    diving() { return dive?.dir ?? null },
     nodeAnchor(id) {
       const m = view?.meshes.get(id)
       const s = screenPos(id)
@@ -323,6 +481,10 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       nodeScreenPos: (id: string) => screenPos(id),
       nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],
+      diving: () => api.diving(),
+      holdDive: (t: number | null) => { heldT = t },
+      reveal: () => view?.reveal() ?? null,
+      particles: () => dive?.points ? dive.ids.length : 0,
       labelText: (id: string) => host.querySelector<HTMLElement>(`[data-node-label="${CSS.escape(id)}"]`)?.textContent ?? null,
     }
   }

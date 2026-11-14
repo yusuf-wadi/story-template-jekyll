@@ -18,6 +18,9 @@ export interface GraphView {
   /** Copy sim positions into meshes/edges and advance the focus fade (dt=Infinity snaps). */
   sync(positions: Map<string, THREE.Vector3>, dt: number): void
   setFocus(id: string | null): void
+  /** Global fade (0..1) used while the dive brings the graph in or out. */
+  setReveal(k: number): void
+  reveal(): number
   refresh(isVisited: (id: string) => boolean): void
   brightness(id: string): number | null
   /** The node's cluster hue as #rrggbb. */
@@ -87,6 +90,7 @@ export function createGraphView(layout: SectionLayout): GraphView {
   const tmp = new THREE.Color()
 
   let focus: string | null = null
+  let reveal = 1
   const approach = (cur: number, to: number, dt: number) => {
     const step = dt === Infinity ? Infinity : dt / FADE_S
     return cur < to ? Math.min(to, cur + step) : Math.max(to, cur - step)
@@ -104,14 +108,14 @@ export function createGraphView(layout: SectionLayout): GraphView {
       const mat = m.material as THREE.MeshLambertMaterial
       mat.color.copy(hue.get(id)!).multiplyScalar(s.bright * 0.6)
       mat.emissive.copy(hue.get(id)!).multiplyScalar(s.bright * 0.55)
-      mat.opacity = s.vis
+      mat.opacity = s.vis * reveal
       const halo = m.children[0] as THREE.Sprite
-      ;(halo.material as THREE.SpriteMaterial).opacity = HALO_ALPHA * s.vis * (0.4 + 0.6 * s.bright)
+      ;(halo.material as THREE.SpriteMaterial).opacity = HALO_ALPHA * s.vis * (0.4 + 0.6 * s.bright) * reveal
     }
     edges.forEach(([a, b], i) => {
       const hot = focus !== null && (a === focus || b === focus)
       edgeVis[i] = approach(edgeVis[i], !focus ? 1 : hot ? EDGE_HOT / EDGE_ALPHA : DIM, dt)
-      const k = EDGE_ALPHA * edgeVis[i]
+      const k = EDGE_ALPHA * edgeVis[i] * reveal
       const pa = meshes.get(a)!.position
       const pb = meshes.get(b)!.position
       ePos.set([pa.x, pa.y, pa.z, pb.x, pb.y, pb.z], i * 6)
@@ -128,6 +132,8 @@ export function createGraphView(layout: SectionLayout): GraphView {
   return {
     group, meshes, neighbors, edges, sync,
     setFocus(id) { focus = id && meshes.has(id) ? id : null },
+    setReveal(k) { reveal = k; group.visible = k > 0.001 },
+    reveal() { return reveal },
     refresh(isVisited) { for (const [id, s] of state) s.bright = isVisited(id) ? 1 : UNVISITED },
     brightness(id) { return state.get(id)?.bright ?? null },
     colorOf(id) { const c = hue.get(id); return c ? `#${c.getHexString()}` : null },

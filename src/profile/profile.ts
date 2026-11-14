@@ -3,6 +3,40 @@ import type { Progress } from '../progress'
 import { HEAD_SVG, REGION_IDS } from './head'
 import { mountLight } from './light'
 import { drawTraces, generatePcb, seedFor, type Pcb } from './pcb'
+import { DIVE_MS, EASE_CSS, FADE_MS, PARTICLES, diveZoom, type DiveFrom } from '../dive'
+
+/** A dive measured while the profile was still on screen: the outline, and a frozen copy of the profile to push into. */
+export interface PreparedDive { from: DiveFrom; ghost: HTMLElement }
+
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+
+/** A static, inert copy of the profile for the push: no ids, hooks or focusables, paint servers renamed so they resolve. */
+function ghostOf(el: HTMLElement): HTMLElement {
+  const g = el.cloneNode(true) as HTMLElement
+  const src = [el, ...el.querySelectorAll('*')]
+  const dst = [g, ...g.querySelectorAll('*')]
+  const urlRe = /url\("?[^"#)]*#([^")]+)"?\)/g
+  src.forEach((s, i) => {
+    const d = dst[i] as HTMLElement | SVGElement
+    if (s instanceof SVGElement && !s.closest('defs')) {
+      const cs = getComputedStyle(s)
+      for (const prop of ['fill', 'stroke'] as const) {
+        const v = cs[prop]
+        if (v.includes('url(')) d.style[prop] = v.replace(urlRe, 'url("#dive-$1")')
+      }
+    }
+    if (d.id) d.id = `dive-${d.id}`
+    for (const a of [...d.attributes]) {
+      if (a.name.startsWith('data-') || a.name === 'tabindex' || a.name === 'href' || a.name === 'role') d.removeAttribute(a.name)
+    }
+  })
+  g.querySelectorAll('.egg-pulse').forEach((n) => n.remove())
+  g.className = `dive-ghost${el.classList.contains('is-booted') ? ' is-booted' : ''}`
+  g.dataset.dive = ''
+  g.setAttribute('aria-hidden', 'true')
+  g.inert = true
+  return g
+}
 
 export interface ProfileOpts {
   content: Content
@@ -25,6 +59,7 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
   el.querySelector('h1')!.textContent = content.person.name
   el.querySelector('header p')!.textContent = content.person.tagline
   const label = el.querySelector<HTMLElement>('[data-region-label]')!
+  const regionOf = new Map(mapped.map((s) => [s.id, s.region!]))
   const readout = el.querySelector<HTMLElement>('[data-progress]')!
 
   const itemIds = (id: SectionId) => content.items.filter((i) => i.section === id).map((i) => i.id)
@@ -106,6 +141,47 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     })
   }
 
+  // ---- the dive's 2D half: a ghost of the profile pushes into the lobe; on the way back the profile pulls out of it
+  let motion: { anims: Animation[]; ghost: HTMLElement | null } | null = null
+  const settleMotion = () => {
+    if (!motion) return
+    const m = motion
+    motion = null
+    for (const a of m.anims) a.cancel()
+    m.ghost?.remove()
+    el.classList.remove('is-diving')
+  }
+  const track = (anims: Animation[], ghost: HTMLElement | null) => {
+    const m = { anims, ghost }
+    motion = m
+    anims[0].onfinish = () => { if (motion === m) settleMotion() }
+  }
+  /** The lobe outline in viewport px (profile must be on screen and unmoved). */
+  const diveFrom = (section: SectionId): DiveFrom | null => {
+    const region = regionOf.get(section)
+    const p = region ? paths.get(region) : null
+    if (!p || el.hidden) return null
+    settleMotion()
+    const m = p.getScreenCTM()
+    const len = p.getTotalLength()
+    if (!m || !len) return null
+    const pts = Array.from({ length: PARTICLES }, (_, i) => {
+      const q = p.getPointAtLength((len * i) / PARTICLES)
+      return { x: m.a * q.x + m.c * q.y + m.e, y: m.b * q.x + m.d * q.y + m.f }
+    })
+    const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y)
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
+    const view = { w: window.innerWidth, h: window.innerHeight }
+    return {
+      pts,
+      origin: { x: (x0 + x1) / 2, y: (y0 + y1) / 2 },
+      center: { x: view.w / 2, y: view.h / 2 },
+      zoom: diveZoom({ w: x1 - x0, h: y1 - y0 }, view),
+    }
+  }
+  const pushed = (from: DiveFrom) =>
+    `translate(${(from.center.x - from.origin.x).toFixed(1)}px, ${(from.center.y - from.origin.y).toFixed(1)}px) scale(${from.zoom.toFixed(3)})`
+
   progress.onChange(() => sync(true))
   root.append(el)
   sync(false)
@@ -125,7 +201,46 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
       return !el.hidden && mapped.every((s) => paths.get(s.region!)?.classList.contains('is-pcb'))
     },
     show() { if (el.hidden) { el.hidden = false; sync(true) } },
-    hide() { el.hidden = true },
+    hide() {
+      el.hidden = true
+      for (const p of paths.values()) p.classList.remove('is-hover')
+      label.classList.remove('is-on')
+    },
+    diveFrom,
+    /** Measure a dive into `section`'s lobe and freeze a ghost of the profile, before the route hides it. */
+    prepareDive(section: SectionId): PreparedDive | null {
+      const from = diveFrom(section)
+      return from ? { from, ghost: ghostOf(el) } : null
+    },
+    /** Push the ghost into the lobe and fade it (reduced motion: a 200ms fade). It removes itself when done. */
+    playGhost(d: PreparedDive) {
+      settleMotion()
+      const g = d.ghost
+      g.style.transformOrigin = `${d.from.origin.x}px ${d.from.origin.y}px`
+      el.after(g)
+      const anims = reducedMotion()
+        ? [g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, fill: 'forwards' })]
+        : [
+            g.animate([{ transform: 'none' }, { transform: pushed(d.from) }], { duration: DIVE_MS, easing: EASE_CSS, fill: 'forwards' }),
+            g.animate([{ opacity: 1 }, { opacity: 1, offset: 0.3 }, { opacity: 0, offset: 0.8 }, { opacity: 0 }], { duration: DIVE_MS, fill: 'forwards' }),
+          ]
+      track(anims, g)
+    },
+    /** The reverse: the (shown) profile pulls back out of the lobe while the nodes dissolve into its outline. */
+    pullBack(from: DiveFrom) {
+      settleMotion()
+      el.classList.add('is-diving')
+      el.style.transformOrigin = `${from.origin.x}px ${from.origin.y}px`
+      const anims = reducedMotion()
+        ? [el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS })]
+        : [
+            el.animate([{ transform: pushed(from) }, { transform: 'none' }], { duration: DIVE_MS, easing: EASE_CSS }),
+            el.animate([{ opacity: 0 }, { opacity: 0, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 1 }], { duration: DIVE_MS }),
+          ]
+      track(anims, null)
+    },
+    /** End any push/pull at once (every route change does this before it renders). */
+    settleMotion,
     setProgress,
   }
 }

@@ -29,6 +29,8 @@ export interface ClusterFields {
   /** Cluster label whose centroid is nearest the ray, among clusters the ray passes within radius*0.6 of. */
   hit(ray: THREE.Ray): Cluster | null
   setHighlight(c: Cluster | null): void
+  /** Global fade (0..1) for the dive. */
+  setReveal(k: number): void
   dispose(): void
 }
 
@@ -53,6 +55,11 @@ export function createClusterFields(clusters: Cluster[]): ClusterFields {
     sprites.set(c.id, s)
   }
   const v = new THREE.Vector3()
+  let reveal = 1
+  let hot: number | null = null
+  const paint = () => {
+    for (const [id, s] of sprites) (s.material as THREE.SpriteMaterial).opacity = (hot === id ? HOT : REST) * reveal
+  }
   return {
     group,
     hit(ray) {
@@ -65,9 +72,8 @@ export function createClusterFields(clusters: Cluster[]): ClusterFields {
       }
       return best
     },
-    setHighlight(c) {
-      for (const [id, s] of sprites) (s.material as THREE.SpriteMaterial).opacity = c && c.id === id ? HOT : REST
-    },
+    setHighlight(c) { hot = c ? c.id : null; paint() },
+    setReveal(k) { reveal = k; group.visible = k > 0.001; paint() },
     dispose() {
       for (const s of sprites.values()) s.material.dispose()
       tex.dispose()
