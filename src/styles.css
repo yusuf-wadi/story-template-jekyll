@@ -10,6 +10,8 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .corner-link:hover, .corner-link:focus-visible { opacity: 1; }
 .stage { position: relative; width: min(100vw, 100vh, 800px); aspect-ratio: 1; }
 .stage svg { width: 100%; height: 100%; display: block; }
+/* Phones: the head plus the Writing bubble sit left of centre; nudge the stage right to balance them. */
+@media (max-width: 640px) and (orientation: portrait) { .stage { left: 6.5%; } }
 .head-outline { fill: url(#head-glass-fill); fill-opacity: .022; stroke: url(#head-glass-rim); stroke-width: 1.5; }
 .head-streak { fill: url(#head-glass-streak); stroke: none; pointer-events: none; }
 .region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s, stroke .2s, stroke-opacity .2s, filter .2s; }
