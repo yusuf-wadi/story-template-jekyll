@@ -88,3 +88,33 @@ test.describe('reduced motion', () => {
     await expect(page.locator('canvas')).toBeVisible()
   })
 })
+
+for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+  test(`dive outline sits on its own lobe (${vp.width}x${vp.height})`, async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: vp, hasTouch: vp.width < 600, isMobile: vp.width < 600, deviceScaleFactor: vp.width < 600 ? 3 : 1 })
+    const page = await ctx.newPage()
+    for (const region of ['frontal', 'parietal', 'temporal', 'occipital', 'cerebellum']) {
+      await page.goto('/?e2e')
+      await page.waitForFunction(() => (window as any).__cm?.diving)
+      const lobe = page.locator(`#region-${region}`)
+      if (!(await lobe.count())) continue
+      // The lobe's own rendered box, without its stroke (getBoundingClientRect includes it; the outline samples the path).
+      const r = await lobe.evaluate((n: SVGGraphicsElement) => {
+        const b = n.getBoundingClientRect(), g = n.getBBox()
+        const half = ((parseFloat(getComputedStyle(n).strokeWidth) || 0) * b.width) / (g.width + parseFloat(getComputedStyle(n).strokeWidth)) / 2
+        return { x: b.x + half, y: b.y + half, width: b.width - 2 * half, height: b.height - 2 * half }
+      })
+      await page.evaluate(() => (window as any).__cm.holdDive?.(null))
+      await lobe.dispatchEvent('click')
+      await page.evaluate(() => (window as any).__cm.holdDive(0)) // first frame of the dive
+      await page.waitForFunction(() => (window as any).__cm.particles() > 0)
+      const o = (await page.evaluate(() => (window as any).__cm.diveBounds()))!
+      const w = Math.max(0, Math.min(o.x + o.width, r.x + r.width) - Math.max(o.x, r.x))
+      const h = Math.max(0, Math.min(o.y + o.height, r.y + r.height) - Math.max(o.y, r.y))
+      const iou = (w * h) / (o.width * o.height + r.width * r.height - w * h)
+      expect(iou, `${region} outline ${JSON.stringify(o)} vs lobe ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(0.9)
+      await page.evaluate(() => (window as any).__cm.holdDive(null))
+    }
+    await ctx.close()
+  })
+}

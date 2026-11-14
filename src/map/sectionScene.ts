@@ -41,6 +41,7 @@ const TOUCH_PICK_PX = 22
 const SLEEP_E = 1e-5
 /** The dive starts (in) / ends (out) this much farther from the target: the camera pushes in as the nodes form. */
 const DOLLY = 1.5
+const MAX_DISTANCE = 40
 const SPARK = new THREE.Color(0x6fd8ff)
 /** Phones render at most 1.5 device px per CSS px: fill-rate, battery and heat over the last bit of crispness. */
 const PHONE = '(max-width: 600px)'
@@ -86,7 +87,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   const controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
   controls.minDistance = 6
-  controls.maxDistance = 40
+  controls.maxDistance = MAX_DISTANCE
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   controls.autoRotateSpeed = 0.4
   const labels = createLabels(host, {
@@ -323,6 +324,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     const target = controls.target
     const near = camera.position.clone()
     const far = near.clone().sub(target).multiplyScalar(DOLLY).add(target)
+    // The pulled-back camera must not be clamped by OrbitControls (phones fit the graph from farther out), or the
+    // particles are unprojected for one camera and drawn from another: the outline would no longer match the lobe.
+    controls.maxDistance = Math.max(MAX_DISTANCE, far.distanceTo(target) + 1)
     const d: Dive = {
       dir, t0: performance.now(), dur: reduced ? FADE_MS : DIVE_MS, from,
       cam0: dir === 'in' ? far : near, cam1: dir === 'in' ? near : far,
@@ -399,6 +403,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     const d = dive
     if (!d) return false
     dive = null
+    controls.maxDistance = MAX_DISTANCE
     d.fade?.cancel()
     if (d.points) {
       scene.remove(d.points)
@@ -599,6 +604,20 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       /** The sim is asleep and no focus tween or dive is running (auto-rotate may still turn the camera). */
       settled: () => (reduced || !awake) && !focusTween && !dive,
       reveal: () => view?.reveal() ?? null,
+      /** Screen-px bounding box of the dive particles as the current camera draws them. */
+      diveBounds: () => {
+        const pos = dive?.points?.geometry.attributes.position as THREE.BufferAttribute | undefined
+        if (!pos) return null
+        camera.updateMatrixWorld()
+        const r = el.getBoundingClientRect()
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          v.set(pos.getX(i), pos.getY(i), pos.getZ(i)).project(camera)
+          const x = r.left + ((v.x + 1) / 2) * r.width, y = r.top + ((1 - v.y) / 2) * r.height
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y)
+        }
+        return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
+      },
       particles: () => dive?.points ? dive.ids.length : 0,
       dragState: () => ({ dragging, pressed: !!down, orbit: controls.enabled, pinned: sim?.pinned() ?? false }),
       labelText: (id: string) => host.querySelector<HTMLElement>(`[data-node-label="${CSS.escape(id)}"]`)?.textContent ?? null,

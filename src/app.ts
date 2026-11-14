@@ -1,5 +1,6 @@
 import type { Content, Layout, SectionId } from './types'
 import type { Progress } from './progress'
+import { DIVE_MS, FADE_MS } from './dive'
 import { parseRoute, toHash, type Route } from './router'
 import { mountProfile, type PreparedDive } from './profile/profile'
 import { fitPcb, generatePcb, seedFor } from './profile/pcb'
@@ -123,6 +124,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     currentRoute = route
     // Every route change first settles whatever was moving, so an interrupt always lands in the new route's state.
     const interrupted = scene.cancelTransitions()
+    back.getAnimations().forEach((a) => a.cancel())
     profile.settleMotion()
     if (route.view !== 'item') reader.close()
     if (route.view !== 'list') listHost.hidden = true
@@ -137,7 +139,12 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
         const items = content.items.filter((i) => i.section === route.section)
         const dive = route.view === 'section' && pend?.section === route.section ? pend.dive : null
         void scene.enter(route.section, layout.sections[route.section], items, dive?.from)
-        if (dive) profile.playGhost(dive)
+        if (dive) {
+          profile.playGhost(dive)
+          // The profile header fades with the ghost; keep the Back pill out until it has gone so they never overlap.
+          const ms = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? FADE_MS : DIVE_MS
+          back.animate([{ opacity: 0 }, { opacity: 0, offset: 0.8 }, { opacity: 1 }], { duration: ms })
+        }
         // Keyboard path: entering a section lands on its first node (the card takes focus itself on an item route).
         if (route.view === 'section' && !scene.focusFirstNode()) back.focus({ preventScroll: true })
       }
