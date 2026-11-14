@@ -11,6 +11,8 @@ export interface Labels {
   clear(): void
   /** Whole-layer fade (0..1) for the dive. */
   setReveal(k: number): void
+  /** Visited labels read at full brightness; the rest stay muted. */
+  setVisited(isVisited: (id: string) => boolean): void
 }
 
 /** Distance (world units) at which labels are fully opaque, and where they bottom out. */
@@ -90,6 +92,7 @@ export function createLabels(host: HTMLElement): Labels {
       size.clear()
       nudge.clear()
     },
+    setVisited(isVisited) { for (const [id, el] of els) el.classList.toggle('is-visited', isVisited(id)) },
     setReveal(k) { layer.style.opacity = k >= 1 ? '' : k.toFixed(3) },
   }
 }

@@ -45,6 +45,15 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   const hoverLabel = document.createElement('div')
   hoverLabel.className = 'hover-label'
   hoverLabel.dataset.hoverLabel = ''
+  // Always-visible way back to the head (Escape and browser back still work). Lives in the scene host, so it is
+  // only on screen with a section; with a card open it still goes straight home.
+  const back = document.createElement('button')
+  back.type = 'button'
+  back.className = 'section-back'
+  back.setAttribute('aria-label', 'Back to the brain')
+  back.innerHTML = '<span aria-hidden="true">←</span> Back'
+  back.addEventListener('click', () => go(''))
+  sceneHost.append(back)
   root.append(sceneHost, hoverLabel)
   const scene = createSectionScene(sceneHost, (id) => progress.isVisited(id))
   scene.onHover((l) => { hoverLabel.textContent = l ?? '' })

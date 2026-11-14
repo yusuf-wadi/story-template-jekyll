@@ -465,7 +465,10 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     },
     onNodeClick(fn) { clickFn = fn },
     onHover(fn) { hoverFn = fn },
-    refresh() { view?.refresh(isVisited) },
+    refresh() {
+      view?.refresh(isVisited)
+      labels.setVisited(isVisited)
+    },
     cancelTransitions() { focusTween = null; return finishDive() },
     diving() { return dive?.dir ?? null },
     nodeAnchor(id) {
@@ -491,6 +494,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   if (import.meta.env.DEV || location.search.includes('e2e')) {
     ;(window as unknown as { __cm: unknown }).__cm = {
       nodeBrightness: (id: string) => view?.brightness(id) ?? null,
+      nodeRing: (id: string) => view?.ring(id) ?? null,
       nodeScreenPos: (id: string) => screenPos(id),
       nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],

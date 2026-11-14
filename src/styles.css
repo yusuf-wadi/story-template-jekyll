@@ -57,8 +57,15 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .reader-body a, .reader-links a { color: var(--fg); }
 .reader-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; margin: 20px 0 0; }
 .node-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.node-label { position: absolute; left: 0; top: 0; margin: 5px 0 0 9px; font: 400 11.5px/1.2 system-ui, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: .01em; color: #c6cbd2; white-space: nowrap; text-shadow: 0 0 3px #000, 0 0 8px #000; transition: opacity .15s; will-change: transform, opacity; }
+.node-label { position: absolute; left: 0; top: 0; margin: 5px 0 0 9px; font: 400 11.5px/1.2 system-ui, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: .01em; color: #7d848d; white-space: nowrap; text-shadow: 0 0 3px #000, 0 0 8px #000; transition: opacity .15s; will-change: transform, opacity; }
+/* visited reads at full brightness; unvisited stays muted (the node itself is hollow) */
+.node-label.is-visited { color: #eef2f6; }
 @media (prefers-reduced-motion: reduce) { .node-label { transition: none; } }
+/* section view: a glass pill back to the head */
+.section-back { position: absolute; top: 20px; left: 20px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 11px; border-radius: 999px; border: 1px solid rgb(var(--trace-rgb) / .35); background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(207,228,255,.02)); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 18px rgb(var(--trace-rgb) / .06); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #dbe9f5; font: 500 .8rem/1 system-ui, -apple-system, sans-serif; letter-spacing: .04em; cursor: pointer; transition: border-color .2s, color .2s, box-shadow .2s; }
+.section-back span { color: var(--trace-hi); }
+.section-back:hover, .section-back:focus-visible { border-color: var(--trace-hi); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 14px rgb(var(--trace-rgb) / .35); outline: none; }
+@media (prefers-reduced-motion: reduce) { .section-back { transition: none; } }
 /* ---- lobe PCBs: electric-blue traces on a blue-black solder mask */
 :root { --trace: #4cc9ff; --trace-lit: #6fd8ff; --trace-hi: #9be7ff; --trace-core: #e8f9ff; --trace-rgb: 76 201 255; --mask: #0a1a2a; --silk: #e9efe6; }
 .pcb { pointer-events: none; }
