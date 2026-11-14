@@ -28,7 +28,7 @@ const eggAnimations = (page: Page) => page.evaluate(() =>
   }).length)
 const eye = (page: Page) => page.locator('[data-egg-eye]')
 
-test('completed circuit: links, one trace to an open eye; card lists Now/Next; rewire resets', async ({ page }) => {
+test('completed circuit: links, two traces to an open eye; card lists Now/Next; rewire resets', async ({ page }) => {
   await seed(page, allRegionIds, true)
   await page.goto('/')
   await expect(eye(page)).toBeVisible()
@@ -36,7 +36,7 @@ test('completed circuit: links, one trace to an open eye; card lists Now/Next; r
   await expect(eye(page)).toHaveAttribute('aria-label', "What I'm working on")
   expect(await eye(page).evaluate((e) => e.tagName)).toBe('BUTTON')
   await expect(page.locator('[data-egg-link]')).toHaveCount(7)
-  await expect(page.locator('[data-egg-trace]')).toHaveCount(1)
+  await expect(page.locator('[data-egg-trace]')).toHaveCount(2)
 
   await eye(page).click()
   const card = page.locator('[data-egg-card]')

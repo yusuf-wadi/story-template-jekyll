@@ -1,13 +1,13 @@
 // The circuit closes. Once every lobe is a full PCB:
 //   (1) the facing edge pads of neighbouring lobes are bridged,
 //   (2) current runs through the whole board as a wave from the back of the head to the front,
-//   (3) one glowing trace leaves the frontal lobe and runs down to the face,
-//   (4) where an eye, seen in profile, opens: the upper lid lifts off the lower about the outer corner, and glows.
+//   (3) two glowing traces leave the frontal and temporal lobes and run down to the face,
+//   (4) where an eye, seen in profile, opens: the upper lid swings up about its back end, the eyeball lights, it glows.
 // The eye is a button: it opens one card with what he's working on now and what's next. "rewire" resets.
 
 import type { Item } from '../types'
 import { esc, placeCard, renderBody, safeHref, MARGIN, NARROW } from '../reader/card'
-import { bridge, CORNEA_D, CREASE_D, EYE, EYE_SHAPE, EYE_TRACE, IRIS, LOWER_LID, PUPIL, lashesD, lidD, lidMaskD, toD, upperLid, waveAt, type UV } from './layout'
+import { bridge, BALL_D, EYE, EYE_SHAPE, EYE_TRACES, IRIS_D, LID_MASK_D, LOWER_D, PUPIL, UPPER_D, lidTransform, toD, waveAt, type UV } from './layout'
 
 export interface EggProfile {
   /** Head `<g>`: source coordinates of region outlines, PCBs and edge pads. */
@@ -18,7 +18,7 @@ export const TIMING = {
   settle: 900, // the last board's mask fill lands before anything moves
   link: 520, linkStagger: 90, // bridges between lobes draw in
   wave: 900, spike: 1100, // current: the wave front crosses the head in `wave`; each trace carries spikes for `spike`
-  trace: 950, // the trace to the eye draws in as the wave reaches the front
+  trace: 950, traceStagger: 140, // the traces to the eye draw in as the wave reaches the front
   lids: 750, iris: 600, // the eye opens, then the iris lights
 }
 
@@ -111,53 +111,44 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     return { g, glow, copper }
   })
 
-  // The trace to the eye.
-  const traceD = toD(EYE_TRACE)
-  const trace = svg('g', {}, 'egg-trace')
-  trace.dataset.eggTrace = ''
-  const traceGlow = svg('path', { d: traceD }, 'egg-trace-glow')
-  const traceCopper = svg('path', { d: traceD }, 'egg-trace-copper')
-  const [sx, sy] = EYE_TRACE[0]
-  const tracePad = svg('rect', { x: sx - 3.4, y: sy - 3.4, width: 6.8, height: 6.8, rx: 1, transform: `rotate(45 ${sx} ${sy})` }, 'egg-trace-pad')
-  trace.append(traceGlow, traceCopper, tracePad)
-  board.append(trace)
+  // The traces to the eye.
+  const traces = EYE_TRACES.map((pts) => {
+    const d = toD(pts)
+    const g = svg('g', {}, 'egg-trace')
+    g.dataset.eggTrace = ''
+    const glow = svg('path', { d }, 'egg-trace-glow')
+    const copper = svg('path', { d }, 'egg-trace-copper')
+    const [sx, sy] = pts[0]
+    const pad = svg('rect', { x: sx - 3.4, y: sy - 3.4, width: 6.8, height: 6.8, rx: 1, transform: `rotate(45 ${sx} ${sy})` }, 'egg-trace-pad')
+    g.append(glow, copper, pad)
+    board.append(g)
+    return { g, glow, copper, pad }
+  })
 
-  // The eye, in profile. What the open eye shows (sclera, iris, cornea) is clipped to the eye's outline and to
-  // everything below the upper lid; the lid's curve hinges at the outer corner and lifts from the lower lid.
-  // Clip ids unique per play.
+  // The eye, in profile, drawn as Yusuf sketched it: a "C" eyeball bulging toward the face between two lid strokes.
+  // The eyeball and iris are clipped to everything below the upper lid, which swings about its back end.
   const uid = Math.random().toString(36).slice(2, 8)
-  const shapeId = `egg-eye-shape-${uid}`, maskId = `egg-eye-mask-${uid}`
+  const maskId = `egg-eye-mask-${uid}`
   const eye = svg('g', { transform: `translate(${EYE.x} ${EYE.y})` }, 'egg-eye')
-  const halo = svg('ellipse', { cx: -6, cy: -1, rx: EYE.rx * 1.45, ry: EYE.ry * 1.7 }, 'egg-eye-halo')
-  const shapeClip = svg('clipPath', { id: shapeId })
-  shapeClip.append(svg('path', { d: EYE_SHAPE }))
+  const halo = svg('ellipse', { cx: -4, cy: 0, rx: EYE.rx * 1.35, ry: EYE.ry * 1.45 }, 'egg-eye-halo')
   const maskClip = svg('clipPath', { id: maskId })
-  const mask = svg('path', {})
+  const mask = svg('path', { d: LID_MASK_D })
   maskClip.append(mask)
   const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-eye-ball')
-  const inner = svg('g', { 'clip-path': `url(#${shapeId})` })
+  const arc = svg('path', { d: BALL_D }, 'egg-eye-arc')
   const iris = svg('g', {}, 'egg-eye-iris')
-  iris.append(
-    svg('ellipse', IRIS, 'egg-eye-irisdisc'),
-    svg('ellipse', PUPIL, 'egg-eye-pupil'),
-    svg('circle', { cx: -18, cy: -6.5, r: 1.4 }, 'egg-eye-glint'),
-  )
-  inner.append(svg('path', { d: EYE_SHAPE }, 'egg-eye-white egg-eye-shape'), iris, svg('path', { d: CORNEA_D }, 'egg-eye-cornea'))
-  ball.append(inner)
-  const lower = svg('path', { d: lidD(LOWER_LID) }, 'egg-eye-rim egg-eye-lower')
-  const lid = svg('g', {}, 'egg-eye-lid')
-  const lidRim = svg('path', {}, 'egg-eye-rim egg-eye-upper')
-  const lashes = svg('path', {}, 'egg-eye-lashes')
-  lid.append(lidRim, lashes)
-  /** Openness: 0 shut (upper lid on the lower), 1 open. */
+  iris.append(svg('path', { d: IRIS_D }, 'egg-eye-irisarc'), svg('circle', PUPIL, 'egg-eye-pupil'))
+  ball.append(svg('path', { d: EYE_SHAPE }, 'egg-eye-white egg-eye-shape'), arc, iris)
+  const lower = svg('path', { d: LOWER_D }, 'egg-eye-rim egg-eye-lower')
+  const lid = svg('path', { d: UPPER_D }, 'egg-eye-rim egg-eye-upper')
+  /** Openness: 0 shut (upper lid swung down onto the lower), 1 open. */
   const setLid = (t: number) => {
-    const b = upperLid(t)
-    mask.setAttribute('d', lidMaskD(b))
-    lidRim.setAttribute('d', lidD(b))
-    lashes.setAttribute('d', lashesD(b))
+    const tf = lidTransform(t)
+    mask.setAttribute('transform', tf)
+    lid.setAttribute('transform', tf)
   }
   setLid(0)
-  eye.append(shapeClip, maskClip, halo, svg('path', { d: CREASE_D }, 'egg-eye-crease'), ball, lower, lid)
+  eye.append(maskClip, halo, ball, lower, lid)
   board.append(eye)
   head.append(board)
 
@@ -180,7 +171,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
   const c = new DOMPoint(EYE.x, EYE.y).matrixTransform(m)
   button.style.left = `${(c.x / vbW) * 100}%`
   button.style.top = `${(c.y / vbH) * 100}%`
-  button.style.setProperty('--eye-w', `${(((EYE.rx * 2 + 12) * m.a) / vbW) * 100}%`)
+  button.style.setProperty('--eye-w', `${(((EYE.rx * 2 + 10) * m.a) / vbW) * 100}%`)
 
   const rewire = document.createElement('button')
   rewire.type = 'button'
@@ -271,7 +262,7 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
   // ---------------------------------------------------------------- final state
   const showFinal = () => {
     for (const l of links) l.g.classList.add('is-on')
-    trace.classList.add('is-on')
+    for (const t of traces) t.g.classList.add('is-on')
     eye.classList.add('is-open')
     eye.style.visibility = ''
     setLid(1)
@@ -342,28 +333,30 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     at(T.wave + T.spike + 60, () => pulse.remove())
   })
 
-  // The wave reaches the front and keeps going: out of the frontal lobe, down to the face.
+  // The wave reaches the front and keeps going: out of the frontal and temporal lobes, down to the face.
   const t2 = t1 + T.wave + T.spike * 0.35
-  at(t2, () => {
-    trace.classList.add('is-on')
-    const len = pathLen(traceCopper)
+  traces.forEach((tr, i) => at(t2 + i * T.traceStagger, () => {
+    tr.g.classList.add('is-on')
+    const len = pathLen(tr.copper)
     const o = { duration: T.trace, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'backwards' as const }
-    play(tracePad, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'backwards' })
-    play(traceCopper, drawIn(len), o)
-    play(traceGlow, drawIn(len).map((k, i) => ({ ...k, opacity: i ? 1 : 0.3 })), o)
-  })
+    play(tr.pad, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'backwards' })
+    play(tr.copper, drawIn(len), o)
+    play(tr.glow, drawIn(len).map((k, j) => ({ ...k, opacity: j ? 1 : 0.3 })), o)
+  }))
 
-  const t3 = t2 + T.trace
-  at(t2 + T.trace * 0.55, () => {
-    // The shut eye fades in as the trace arrives: two lid lines meeting at the outer corner.
+  const t3 = t2 + (traces.length - 1) * T.traceStagger + T.trace
+  at(t3 - T.trace * 0.45, () => {
+    // The shut eye fades in as the traces arrive: the lower lid, and the upper one swung down onto it.
     eye.style.visibility = ''
     play(eye, [{ opacity: 0 }, { opacity: 1 }], { duration: T.trace * 0.45, easing: 'ease-in' })
   })
   at(t3, () => {
-    // The upper lid lifts about the outer corner (a touch past open, then settles); the iris lights; the halo blooms.
+    // The upper lid swings up about its back end (a touch past open, then settles); the eyeball's C and the iris
+    // light; then the halo blooms.
     eye.classList.add('is-open')
     const ease = (k: number) => 1 - Math.pow(1 - k, 3)
     tween(T.lids, (k) => setLid(k < 0.8 ? 1.06 * ease(k / 0.8) : 1.06 - 0.06 * ((k - 0.8) / 0.2)))
+    play(arc, [{ opacity: 0.35 }, { opacity: 1, offset: 0.6 }, { opacity: 1 }], { duration: T.lids, easing: 'ease-out' })
     play(iris, [{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }],
       { duration: T.lids + T.iris, easing: 'ease-out' })
     play(halo, [{ opacity: 0 }, { opacity: 0, offset: 0.45 }, { opacity: 1, offset: 0.78 }, { opacity: 0.7 }],

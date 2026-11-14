@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bridge, EYE, EYE_O, EYE_TRACE, LOWER_LID, lidAt, upperLid, waveAt } from '../../src/egg/layout'
+import { bridge, BALL_BOTTOM, BALL_TOP, EYE, EYE_TRACES, LID_FRONT, LID_HINGE, LOWER_LID, LOWER_TRACE, UPPER_TRACE, lidY, onLid, waveAt } from '../../src/egg/layout'
 
 type P = [number, number]
 const segOk = (a: P, b: P) => {
@@ -18,30 +18,48 @@ describe('bridge', () => {
   })
 })
 
-describe('eye trace', () => {
-  it('is orthogonal/45°, starts on the frontal chamfer and ends at the eye’s back corner', () => {
-    for (let k = 1; k < EYE_TRACE.length; k++) expect(segOk(EYE_TRACE[k - 1], EYE_TRACE[k])).toBe(true)
+describe('eye traces', () => {
+  it('are two, orthogonal/45°, each leaving a board edge and staying clear of the temporal board in front', () => {
+    expect(EYE_TRACES).toHaveLength(2)
+    for (const t of EYE_TRACES) for (let k = 1; k < t.length; k++) expect(segOk(t[k - 1], t[k])).toBe(true)
     // frontal chamfer: (302,326)–(330,354), i.e. x - y = -24
-    expect(EYE_TRACE[0][0] - EYE_TRACE[0][1]).toBe(-24)
-    expect(EYE_TRACE[EYE_TRACE.length - 1]).toEqual([EYE.x + EYE.rx, EYE.y])
-    // stays in front of the temporal board (its front edge is x = 330)
-    for (const p of EYE_TRACE) if (p[1] >= 380) expect(p[0]).toBeLessThan(330 - 20)
+    expect(UPPER_TRACE[0][0] - UPPER_TRACE[0][1]).toBe(-24)
+    // temporal front chamfer: (330,422)–(370,462), i.e. x - y = -92
+    expect(LOWER_TRACE[0][0] - LOWER_TRACE[0][1]).toBe(-92)
+    expect(LOWER_TRACE[0][0]).toBeGreaterThan(330)
+    expect(LOWER_TRACE[0][0]).toBeLessThan(370)
+    for (const p of UPPER_TRACE.slice(1)) expect(p[0]).toBeLessThan(330)
+  })
+  it('the upper one drops onto the open upper lid where the C begins; the lower one climbs into the lower lid’s back end', () => {
+    const up = UPPER_TRACE[UPPER_TRACE.length - 1]
+    expect(up[0] - EYE.x).toBeCloseTo(BALL_TOP[0])
+    expect(up[1] - EYE.y).toBeCloseTo(lidY(BALL_TOP[0]))
+    const low = LOWER_TRACE[LOWER_TRACE.length - 1]
+    expect([low[0] - EYE.x, low[1] - EYE.y]).toEqual(LOWER_LID[1])
+    // a V below the eye: the lower trace dips below the lid before rising into it
+    expect(Math.max(...LOWER_TRACE.map((p) => p[1]))).toBeGreaterThan(low[1] + 20)
   })
 })
 
 describe('profile eye', () => {
-  it('hinges both lids at the outer corner, at the back; shut, the upper lid lies on the lower one', () => {
-    expect(EYE_O[0]).toBeGreaterThan(0) // the head faces left: the corner is behind the eye's centre
-    for (const t of [0, 0.5, 1]) expect(lidAt(upperLid(t), 0)).toEqual(EYE_O)
-    for (const s of [0.25, 0.5, 0.75, 1]) {
-      const shut = lidAt(upperLid(0), s), low = lidAt(LOWER_LID, s)
-      expect(Math.hypot(shut[0] - low[0], shut[1] - low[1])).toBeLessThan(1.5)
-    }
+  it('is a C bulging toward the face between two lids that run back from it; the upper lid is longer', () => {
+    expect(LID_HINGE[0]).toBeGreaterThan(0) // the head faces left: the lids run back, behind the eye's centre
+    expect(LID_FRONT[0]).toBeLessThan(LOWER_LID[0][0]) // the upper lid overhangs the front
+    expect(LID_HINGE[0] - LID_FRONT[0]).toBeGreaterThan(LOWER_LID[1][0] - LOWER_LID[0][0])
+    expect(BALL_TOP[1]).toBeCloseTo(lidY(BALL_TOP[0]))
+    expect(BALL_BOTTOM[1]).toBe(LOWER_LID[0][1])
+    expect(LOWER_LID[1][1] - LID_HINGE[1]).toBeGreaterThan(EYE.ry * 1.5)
   })
-  it('opens toward the front: the open upper lid ends above and in front of the lower lid’s end', () => {
-    const up = lidAt(upperLid(1), 1), low = lidAt(LOWER_LID, 1)
-    expect(up[0]).toBeLessThan(0)
-    expect(low[1] - up[1]).toBeGreaterThan(EYE.ry * 1.5)
+  it('swings about its back end: open, it lies on its drawn line; shut, its front end rests on the lower lid', () => {
+    for (const t of [0, 0.5, 1]) expect(onLid(LID_HINGE, t)).toEqual(LID_HINGE)
+    const open = onLid(LID_FRONT, 1)
+    expect(open[0]).toBeCloseTo(LID_FRONT[0])
+    expect(open[1]).toBeCloseTo(LID_FRONT[1])
+    const shut = onLid(LID_FRONT, 0)
+    expect(shut[1]).toBeCloseTo(LOWER_LID[0][1])
+    expect(shut[0]).toBeGreaterThan(LOWER_LID[0][0])
+    expect(shut[0]).toBeLessThan(LOWER_LID[1][0])
+    expect(onLid(LID_FRONT, 0.5)[1]).toBeGreaterThan(open[1]) // it rises as it opens
   })
 })
 

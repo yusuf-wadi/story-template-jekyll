@@ -93,22 +93,18 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .egg-spike { fill: none; stroke: var(--trace-core); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1.6 5 1.6 30; filter: drop-shadow(0 0 2px var(--trace-hi)); }
 .is-booted .pcb-chip { stroke: var(--trace-hi); stroke-opacity: .55; transition: stroke .8s, stroke-opacity .8s; }
 .egg-eye-halo { fill: var(--trace-hi); opacity: 0; filter: blur(10px); }
-.egg-eye-white { fill: #08131e; }
-.egg-eye-irisdisc { fill: var(--trace); }
-.egg-eye-pupil { fill: #02070c; }
-.egg-eye-glint { fill: var(--trace-core); }
-.egg-eye-cornea { fill: none; stroke: var(--trace-core); stroke-opacity: .55; stroke-width: 1; }
-.egg-eye-rim { fill: none; stroke: var(--trace-hi); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.egg-eye-upper { stroke-width: 1.9; }
-.egg-eye-lower { stroke-opacity: .75; stroke-width: 1.3; }
-.egg-eye-crease { fill: none; stroke: var(--trace-hi); stroke-opacity: .3; stroke-width: 1; stroke-linecap: round; }
-.egg-eye-lashes { fill: none; stroke: var(--trace-hi); stroke-opacity: .8; stroke-width: 1.1; stroke-linecap: round; }
+.egg-eye-white { fill: none; } /* the outline the e2e checks; the eye itself is open line art */
+.egg-eye-arc { fill: none; stroke: var(--trace-hi); stroke-width: 2.2; stroke-linecap: round; filter: drop-shadow(0 0 2px var(--trace-hi)); }
+.egg-eye-irisarc { fill: none; stroke: var(--trace); stroke-width: 1.8; stroke-linecap: round; }
+.egg-eye-pupil { fill: var(--trace-core); filter: drop-shadow(0 0 2px var(--trace-hi)); }
+.egg-eye-rim { fill: none; stroke: var(--trace-lit); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.egg-eye-upper { stroke: var(--trace-hi); }
 .egg-eye:not(.is-open) .egg-eye-ball, .egg-eye:not(.is-open) .egg-eye-halo { opacity: 0; }
 .egg-eye.is-open .egg-eye-halo { opacity: .7; animation: egg-glow 4.2s ease-in-out infinite; }
-.egg-eye.is-open .egg-eye-irisdisc { animation: egg-iris 4.2s ease-in-out infinite; }
+.egg-eye.is-open .egg-eye-irisarc { animation: egg-iris 4.2s ease-in-out infinite; }
 @keyframes egg-glow { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
-@keyframes egg-iris { 0%, 100% { fill: var(--trace); } 50% { fill: var(--trace-hi); } }
-.egg-eye-btn { position: absolute; width: max(36px, var(--eye-w, 40px)); aspect-ratio: 1.6; transform: translate(-50%, -50%); padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; z-index: 2; }
+@keyframes egg-iris { 0%, 100% { stroke: var(--trace); } 50% { stroke: var(--trace-hi); } }
+.egg-eye-btn { position: absolute; width: max(42px, var(--eye-w, 46px)); aspect-ratio: 1.15; transform: translate(-50%, -50%); padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; z-index: 2; }
 .egg-eye-btn:focus { outline: none; }
 .egg-eye-btn:focus-visible { outline: 2px solid var(--trace-hi); outline-offset: 3px; }
 .egg-rewire { position: absolute; right: 24px; bottom: 20px; background: none; border: 1px solid rgb(var(--trace-rgb) / .45); border-radius: 999px; padding: 4px 12px; color: var(--trace); font: 500 .72rem/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; cursor: pointer; }
@@ -131,7 +127,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .egg-item-body a, .egg-item-links a { color: var(--trace-hi); }
 .egg-item-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; margin: 6px 0 0; }
 @media (prefers-reduced-motion: reduce) {
-  .egg-eye.is-open .egg-eye-halo, .egg-eye.is-open .egg-eye-irisdisc { animation: none; }
+  .egg-eye.is-open .egg-eye-halo, .egg-eye.is-open .egg-eye-irisarc { animation: none; }
   .is-booted .pcb-chip { transition: none; }
 }
 
