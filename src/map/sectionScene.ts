@@ -410,9 +410,14 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     renderer.render(scene, camera)
   }
   let prev = 0
+  /** e2e/perf only: CPU ms spent in the last 240 frames (render submit included). */
+  const work: number[] = []
+  const probe = import.meta.env.DEV || location.search.includes('e2e')
   function loop(now: number) {
     if (!running) return
+    const t0 = probe ? performance.now() : 0
     frame(Math.min(0.05, (now - prev) / 1000))
+    if (probe) { work.push(performance.now() - t0); if (work.length > 240) work.shift() }
     prev = now
     raf = requestAnimationFrame(loop)
   }
@@ -518,6 +523,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       nodeBrightness: (id: string) => view?.brightness(id) ?? null,
       nodeRing: (id: string) => view?.ring(id) ?? null,
       pixelRatio: () => renderer.getPixelRatio(),
+      frameWork: () => work.slice(),
       nodeScreenPos: (id: string) => screenPos(id),
       nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],

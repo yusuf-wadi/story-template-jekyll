@@ -1,29 +1,14 @@
 {
-  "name": "portfolio-site",
+  "name": "ywadi-portfolio",
+  "private": true,
   "version": "1.0.0",
-  "description": "A Jekyll version of the \"Story\" theme by [HTML5 UP](https://html5up.net/).",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "type": "module",
   "scripts": {
     "test": "vitest run",
     "dev": "vite",
     "build": "tsx scripts/check-sync.ts && vite build && tsx scripts/build-writing.ts",
     "e2e": "playwright test"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yusuf-wadi/story-template-jekyll.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/yusuf-wadi/story-template-jekyll/issues"
-  },
-  "homepage": "https://github.com/yusuf-wadi/story-template-jekyll#readme",
   "devDependencies": {
     "@playwright/test": "^1.65.1",
     "@types/node": "^26.6.6",

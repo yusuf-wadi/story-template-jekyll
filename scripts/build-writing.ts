@@ -54,6 +54,7 @@ const page = (css: string, o: { title: string; desc: string; path: string; body:
 <title>${esc(o.title)}</title>
 <meta name="description" content="${esc(o.desc)}">
 <link rel="canonical" href="${esc(o.site + o.path)}">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="alternate" type="application/rss+xml" title="Yusuf Wadi: Writing" href="/writing/rss.xml">
 <style>${css}</style>
 </head>
