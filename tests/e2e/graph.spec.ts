@@ -18,7 +18,7 @@ test('projects graph: a label per node with its title, edges match layout', asyn
 test('hovering a node dims non-neighbors and keeps neighbors lit', async ({ page }) => {
   await page.goto('/?e2e#projects')
   await page.waitForFunction(() => (window as any).__cm?.edges)
-  await page.waitForTimeout(2000) // let the sim settle
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true) // let the sim settle
   const nb = (id: string) => new Set(proj.edges.filter((e: string[]) => e.includes(id)).flat())
   const id = proj.nodes.map((n: any) => n.id).find((i: string) => nb(i).size - 1 < proj.nodes.length - 1)
   const near = [...nb(id)].find((i) => i !== id) as string
@@ -35,7 +35,7 @@ for (const kind of ['pointercancel', 'lostpointercapture']) {
   test(`a node drag interrupted by ${kind} releases the node and re-enables orbit`, async ({ page }) => {
     await page.goto('/?e2e#projects')
     await page.waitForFunction(() => (window as any).__cm?.dragState)
-    await page.waitForTimeout(500)
+    await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true)
     const id = proj.nodes[0].id
     const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), id)
     await page.mouse.move(p.x, p.y)
@@ -52,7 +52,7 @@ for (const kind of ['pointercancel', 'lostpointercapture']) {
 test('leaving the section mid-drag resets the drag', async ({ page }) => {
   await page.goto('/?e2e#projects')
   await page.waitForFunction(() => (window as any).__cm?.dragState)
-  await page.waitForTimeout(500)
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true)
   const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), proj.nodes[0].id)
   await page.mouse.move(p.x, p.y)
   await page.mouse.down()

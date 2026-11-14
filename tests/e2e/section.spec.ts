@@ -10,7 +10,7 @@ test('projects map: canvas, node hover label, click navigates', async ({ page })
   await expect(page.locator('canvas')).toBeVisible()
   const id = (layout as any).sections.projects.nodes[0].id
   await page.waitForFunction(() => (window as any).__cm)
-  await page.waitForTimeout(300)
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true)
   const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), id)
   await page.mouse.move(p.x, p.y)
   await expect(page.locator('[data-hover-label]')).toHaveText(title(id))

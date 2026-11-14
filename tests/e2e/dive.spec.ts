@@ -22,9 +22,10 @@ test('interrupt: Escape mid-dive (~400ms) lands on the profile with no overlay o
   await page.goto('/?e2e')
   await page.waitForFunction(() => (window as any).__cm?.diving)
   await page.locator('#region-frontal').click()
-  await page.waitForTimeout(400)
+  await page.evaluate(() => (window as any).__cm.holdDive(0.33)) // pin the dive a third of the way in
   expect(await diving(page)).toBe('in') // still mid-dive
   await page.keyboard.press('Escape')
+  await page.evaluate(() => (window as any).__cm.holdDive(null))
   // synchronous routing: the very next read already sees the route's state
   const now = await page.evaluate(() => ({
     hash: location.hash,
@@ -43,8 +44,10 @@ test('interrupt: a click on the scene mid-dive finishes the dive at once', async
   await page.goto('/?e2e')
   await page.waitForFunction(() => (window as any).__cm?.diving)
   await page.locator('#region-frontal').click()
-  await page.waitForTimeout(300)
+  await page.evaluate(() => (window as any).__cm.holdDive(0.25))
+  expect(await diving(page)).toBe('in')
   await page.mouse.click(8, 8)
+  await page.evaluate(() => (window as any).__cm.holdDive(null))
   expect(await diving(page)).toBe(null)
   expect(await reveal(page)).toBe(1)
   await expect(page.locator('[data-dive]')).toHaveCount(0)
@@ -58,8 +61,9 @@ test('exit reverses into the lobe; re-entering mid-reverse lands in the section'
   expect(await hash(page)).toBe('')
   expect(await diving(page)).toBe('out')
   await expect(page.locator('[data-view="profile"]')).toBeVisible()
-  await page.waitForTimeout(300)
+  await page.evaluate(() => (window as any).__cm.holdDive(0.25)) // mid-reverse
   await page.locator('#region-temporal').click({ force: true })
+  await page.evaluate(() => (window as any).__cm.holdDive(null))
   await expect(page).toHaveURL(/#research$/)
   await expect(page.locator('[data-view="profile"]')).toBeHidden()
   await expect.poll(() => diving(page), { timeout: 3000 }).toBe(null)

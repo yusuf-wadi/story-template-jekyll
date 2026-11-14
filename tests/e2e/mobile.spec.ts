@@ -11,7 +11,7 @@ test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch
 
 const settle = async (page: Page) => {
   await page.waitForFunction(() => (window as any).__cm?.pixelRatio)
-  await page.waitForTimeout(600)
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true)
 }
 
 test('phone: renderer pixel ratio is capped at 1.5', async ({ page }) => {

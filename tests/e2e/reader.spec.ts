@@ -52,7 +52,7 @@ test('interrupt: region click then Escape within 100ms lands on profile', async 
 test('interrupt: node click then ArrowRight shows next tour item', async ({ page }) => {
   await page.goto('/?e2e#projects')
   await page.waitForFunction(() => (window as any).__cm)
-  await page.waitForTimeout(300)
+  await expect.poll(() => page.evaluate(() => (window as any).__cm.settled()), { timeout: 15000 }).toBe(true)
   const p = await page.evaluate((i) => (window as any).__cm.nodeScreenPos(i), tour[0])
   await page.mouse.click(p.x, p.y)
   await page.keyboard.press('ArrowRight')

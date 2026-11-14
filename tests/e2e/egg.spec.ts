@@ -129,10 +129,8 @@ test('leaving the profile mid-sequence settles the egg; the card never survives 
   await expect(page.locator('.reader')).toBeVisible()
   await page.goto('/#')
   await expect(page.locator('.egg-pulse').first()).toBeAttached({ timeout: 6000 }) // sequence under way
-  await page.waitForTimeout(300)
   await page.goto(`/#${section}`)
   await expect(page.locator('[data-view="section"]')).toBeVisible()
-  await page.waitForTimeout(400)
   await page.goto('/#')
   await expect(eye(page)).toHaveAttribute('data-state', 'open')
   await expect(page.locator('.egg-pulse')).toHaveCount(0)
