@@ -66,7 +66,16 @@ terminal pad. Clicking a pad opens a short card about **what he's working on now
 per trace). These items live in `content.json` under a `next` section (`now` / `upcoming` status), and he writes
 the wording. A "rewire" button resets progress.
 
-### 7. Escape hatches
+### 7. Writing (blog)
+- A place for his thoughts instead of Medium. Posts are Markdown files in `content/writing/<slug>.md` with
+  front matter (`title, date, summary, tags`). They build to plain, fast reading pages at `/writing/<slug>`, with
+  an index at `/writing` and an RSS feed at `/writing/rss.xml`. No 3D on these pages; typography and reading
+  comfort come first.
+- Entrance: a small, quiet "Writing" mark near the profile's mouth (speech). Posts do **not** count toward
+  wiring the circuit.
+- Publishing = add a Markdown file and push.
+
+### 8. Escape hatches
 - `#list` route: a fast, accessible plain list of everything (sections → items), linkable, readable by recruiters
   and screen readers. Also the fallback when WebGL is unavailable.
 - Mobile: same flow, with tap and swipe; the 3D map uses fewer effects.
@@ -110,12 +119,13 @@ the wording. A "rewire" button resets progress.
 2. Rough prototype of the full loop with placeholder visuals (profile → section → node → back → completion).
 3. Layout pipeline with e-means → real maps.
 4. Visual polish: head art, dive transition, PCB animation, easter egg.
-5. `#list`, mobile, accessibility, performance pass.
-6. Preview deploy → his review → merge and point production at `v2` (only with his OK).
+5. Writing section (Markdown → pages + RSS).
+6. `#list`, mobile, accessibility, performance pass.
+7. Preview deploy → his review → merge and point production at `v2` (only with his OK).
 
 ## Out of scope
 
-Blog/writing section, CMS, analytics, contact form backend (contact is links + copyable email).
+CMS, comments, analytics, contact form backend (contact is links + copyable email).
 
 ## Dependencies to install (will ask before each)
 
