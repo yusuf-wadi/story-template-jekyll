@@ -77,5 +77,13 @@ export function validateContent(raw: unknown): Content {
   const clusterLabelOverrides: Record<string, string> = {}
   for (const k of Object.keys(ov)) clusterLabelOverrides[k] = str(ov[k], `clusterLabelOverrides.${k}`)
 
-  return { person, sections, items, clusterLabelOverrides } as Content
+  const cc = obj(r.clusterCount ?? {}, 'clusterCount')
+  const clusterCount: Record<string, number> = {}
+  for (const k of Object.keys(cc)) {
+    const v = cc[k]
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 2) fail(`clusterCount.${k}`, 'must be an integer >= 2')
+    clusterCount[k] = v as number
+  }
+
+  return { person, sections, items, clusterLabelOverrides, clusterCount } as Content
 }

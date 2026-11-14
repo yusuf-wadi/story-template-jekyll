@@ -102,6 +102,16 @@ def test_override_label(content):
     assert next(c for c in out["clusters"] if c["id"] == cl["id"])["label"] == "Custom Label"
 
 
+def test_cluster_count_override(content):
+    content["clusterCount"] = {"projects": 3}
+    a = bl.build(content, 7)["sections"]["projects"]
+    assert len(a["clusters"]) == 3
+    assert a == bl.build(content, 7)["sections"]["projects"]
+    content["clusterCount"] = {"projects": 99}
+    with pytest.raises(ValueError):
+        bl.build(content, 7)
+
+
 def test_next_excluded(content):
     assert "next" not in bl.build(content, 7)["sections"]
 

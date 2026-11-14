@@ -157,6 +157,11 @@ def build(content, seed=7):
         emb = _unit(embed(texts))
         pos = _normalize(reduce_3d(emb, seed))
         k = choose_k(emb, seed)
+        forced = content.get("clusterCount", {}).get(sec)
+        if forced is not None and len(items) >= 6:
+            if not isinstance(forced, int) or forced < 2 or forced > len(items) // 2:
+                raise ValueError(f"clusterCount[{sec!r}]={forced!r}: need an integer in 2..{len(items) // 2}")
+            k = forced
         node_cluster = [None] * len(items)
         clusters = []
         if k is not None:

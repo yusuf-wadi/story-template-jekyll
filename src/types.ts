@@ -22,6 +22,7 @@ export interface Content {
   sections: Section[]
   items: Item[]
   clusterLabelOverrides: Record<string, string>
+  clusterCount?: Record<string, number>
 }
 
 export interface SectionLayout {

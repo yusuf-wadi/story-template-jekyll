@@ -9,6 +9,14 @@ describe('validateContent', () => {
     const c = validateContent(raw())
     expect(c.items.length).toBeGreaterThan(0)
   })
+  it('validates clusterCount', () => {
+    const ok = raw(); ok.clusterCount = { projects: 3 }
+    expect(validateContent(ok).clusterCount).toEqual({ projects: 3 })
+    for (const bad of [1, 2.5, '3']) {
+      const c = raw(); c.clusterCount = { projects: bad }
+      expect(() => validateContent(c)).toThrow(/clusterCount\.projects/)
+    }
+  })
   it('rejects duplicate ids', () => {
     const r = raw(); r.items[1].id = r.items[0].id
     expect(() => validateContent(r)).toThrow(/duplicate id/)

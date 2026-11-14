@@ -614,11 +614,13 @@
     }
   ],
   "clusterLabelOverrides": {
-    "freaqy": "Models & math",
-    "autoapply": "Signals & automation",
-    "lumii": "Conversational AI",
-    "therapt": "Conversational AI",
+    "therapt": "Apps & conversational AI",
+    "mtg-oracle": "Models & algorithms",
+    "autoapply": "Automation",
     "toyota-charging-data": "Toyota",
     "seeloz": "Early career"
+  },
+  "clusterCount": {
+    "projects": 3
   }
 }

@@ -69,7 +69,7 @@
             0.507,
             -2.555
           ],
-          "cluster": 0
+          "cluster": 1
         },
         {
           "id": "mtg-oracle",
@@ -78,7 +78,7 @@
             3.375,
             -4.944
           ],
-          "cluster": 0
+          "cluster": 1
         },
         {
           "id": "chess-vis",
@@ -87,7 +87,7 @@
             5.633,
             -2.854
           ],
-          "cluster": 0
+          "cluster": 1
         },
         {
           "id": "freaqy",
@@ -96,7 +96,7 @@
             -1.807,
             -3.495
           ],
-          "cluster": 0
+          "cluster": 1
         },
         {
           "id": "therapt",
@@ -114,7 +114,7 @@
             4.697,
             -0.53
           ],
-          "cluster": 0
+          "cluster": 1
         },
         {
           "id": "autoapply",
@@ -123,7 +123,7 @@
             -0.666,
             -1.495
           ],
-          "cluster": 1
+          "cluster": 2
         },
         {
           "id": "camper-registry",
@@ -159,23 +159,33 @@
             -3.792,
             0.466
           ],
-          "cluster": 0
+          "cluster": 1
         }
       ],
       "clusters": [
         {
           "id": 0,
-          "label": "Models & math",
+          "label": "Apps & conversational AI",
           "centroid": [
-            0.532,
-            0.061,
-            0.136
+            0.498,
+            -1.589,
+            3.081
           ],
-          "radius": 8.589
+          "radius": 8.097
         },
         {
           "id": 1,
-          "label": "Signals & automation",
+          "label": "Models & algorithms",
+          "centroid": [
+            0.56,
+            1.435,
+            -2.319
+          ],
+          "radius": 8.061
+        },
+        {
+          "id": 2,
+          "label": "Automation",
           "centroid": [
             -5.847,
             -0.666,
