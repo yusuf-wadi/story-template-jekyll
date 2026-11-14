@@ -9,6 +9,7 @@ export interface SectionScene {
   focus(id: string | null): Promise<void>
   onNodeClick(fn: (id: string) => void): void
   onHover(fn: (label: string | null) => void): void
+  refresh(): void
   cancelTransitions(): void
   dispose(): void
 }
@@ -131,15 +132,14 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       titles = new Map(items.map((i) => [i.id, i.title]))
       clusterLabels = layout.clusters
       for (const n of layout.nodes) {
-        const full = isVisited(n.id)
         const mat = new THREE.MeshBasicMaterial({ color: 0xffffff })
-        mat.color.multiplyScalar(full ? 1 : 0.35)
         const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 24, 16), mat)
         mesh.position.set(...n.pos)
         mesh.userData.id = n.id
         nodeGroup.add(mesh)
         meshes.set(n.id, mesh)
       }
+      api.refresh()
       fields = createClusterFields(clusterLabels)
       scene.add(fields.group)
       host.hidden = false
@@ -162,6 +162,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     },
     onNodeClick(fn) { clickFn = fn },
     onHover(fn) { hoverFn = fn },
+    refresh() {
+      for (const [id, m] of meshes) (m.material as THREE.MeshBasicMaterial).color.setScalar(isVisited(id) ? 1 : 0.35)
+    },
     cancelTransitions() { focusTween = null },
     dispose() {
       stop()
@@ -170,11 +173,16 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       controls.dispose()
       renderer.dispose()
       el.remove()
+      delete (window as unknown as { __cm?: unknown }).__cm
     },
   }
 
   if (import.meta.env.DEV || location.search.includes('e2e')) {
     ;(window as unknown as { __cm: unknown }).__cm = {
+      nodeBrightness(id: string) {
+        const m = meshes.get(id)
+        return m ? (m.material as THREE.MeshBasicMaterial).color.r : null
+      },
       nodeScreenPos(id: string) {
         const m = meshes.get(id)
         if (!m) return null

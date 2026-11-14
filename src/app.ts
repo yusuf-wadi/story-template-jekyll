@@ -28,6 +28,11 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     if (currentSection) location.hash = toHash({ view: 'item', section: currentSection, item: id })
   })
   let currentSection: SectionId | null = null
+  progress.onChange(() => scene.refresh())
+  if (import.meta.env.DEV || location.search.includes('e2e')) {
+    const w = window as unknown as { __cm?: object }
+    w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id) })
+  }
 
   const render = () => {
     const route = parseRoute(location.hash, content)
@@ -35,6 +40,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       profile.hide()
       placeholder.hidden = true
       sceneHost.dataset.view = route.view
+      scene.refresh()
       if (currentSection !== route.section) {
         currentSection = route.section
         const items = content.items.filter((i) => i.section === route.section)

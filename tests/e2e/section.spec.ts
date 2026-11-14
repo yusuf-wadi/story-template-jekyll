@@ -24,3 +24,15 @@ test('research map: empty space shows no cluster label', async ({ page }) => {
   await page.mouse.move(5, 5)
   await expect(page.locator('[data-hover-label]')).toHaveText('')
 })
+
+test('visited node brightens after returning from item route', async ({ page }) => {
+  await page.goto('/?e2e#projects')
+  const id = layout.sections.projects.nodes[0].id
+  await page.waitForFunction(() => (window as any).__cm?.visit)
+  const b = () => page.evaluate((i) => (window as any).__cm.nodeBrightness(i), id)
+  expect(await b()).toBeCloseTo(0.35, 2)
+  await page.evaluate((i) => location.hash = `#projects/${i}`, id)
+  await page.evaluate((i) => (window as any).__cm.visit(i), id)
+  await page.evaluate(() => location.hash = '#projects')
+  await expect.poll(b).toBeCloseTo(1, 2)
+})
