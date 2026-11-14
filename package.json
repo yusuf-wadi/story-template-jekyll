@@ -10,7 +10,8 @@
     "test": "vitest run",
     "dev": "vite",
     "build": "tsx scripts/check-sync.ts && vite build && tsx scripts/build-writing.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "publish-notes": "tsx scripts/publish-notes.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",

@@ -104,6 +104,22 @@ Markdown body…
 `title`, `date` (YYYY-MM-DD) and `summary` are required. A post with `draft: true` is skipped. `npm run build`
 writes the posts, the `/writing/` index and `/writing/rss.xml` into `dist/`.
 
+## Writing from Obsidian
+
+Any note in `~/life/writing/blog/` is published; `~/life/writing/` itself stays private. Drop a note there, then run
+
+```sh
+npm run publish-notes -- --push     # or just ask Claude
+```
+
+Vercel deploys the pushed commit. Moving the note out of `blog/` unpublishes it on the next run. Front matter is
+optional: the title is the filename, the date is the day it was first published (kept in
+`content/writing/.manifest.json`), and the summary is the first paragraph; `title`, `date`, `summary` in the note
+override these, and `draft: true` keeps it out. `[[wikilinks]]` link to other published notes (otherwise they
+become plain text), `![[image.png]]` is copied to `public/writing/media/<slug>/`, and `%% comments %%` are
+stripped. Without `--push` the script only updates the files locally. `BLOG_SRC` overrides the folder. The files
+under `content/writing/` that it writes are generated; edit the note, not them.
+
 ## Tests
 
 ```sh

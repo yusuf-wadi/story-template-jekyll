@@ -16,21 +16,34 @@ const md = new Marked({ renderer: SAFE_RENDERER as never })
 const xml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]!)
 const fmtDate = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
 
-function readPost(dir: string, file: string): Post | null {
-  if (!/^[a-z0-9][a-z0-9-]*\.md$/.test(file)) {
-    const k = basename(file, '.md').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'post'
-    throw new Error(`${file}: filename becomes the URL slug; rename to kebab-case, e.g. "${k}.md"`)
-  }
-  const { data, content } = matter(readFileSync(join(dir, file), 'utf8'))
-  if (data.draft === true) return null
+/** Front-matter rules shared by the build and the Obsidian publisher. Throws with a message naming `file`. */
+export function validateMeta(file: string, data: Record<string, unknown>): { title: string; date: string; summary: string } {
   const need = (k: string) => {
-    const v = data[k] instanceof Date ? data[k].toISOString().slice(0, 10) : data[k]
+    const v = data[k] instanceof Date ? (data[k] as Date).toISOString().slice(0, 10) : data[k]
     if (typeof v !== 'string' || !v.trim()) throw new Error(`${file}: missing front-matter "${k}"`)
     return v.trim()
   }
   const title = need('title'), date = need('date'), summary = need('summary')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(+new Date(date + 'T00:00:00Z')) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date) throw new Error(`${file}: "date" must be YYYY-MM-DD, got "${date}"`)
-  return { slug: basename(file, '.md'), title, date, summary, html: md.parse(content, { async: false }) }
+  return { title, date, summary }
+}
+
+export function checkSlugFile(file: string): void {
+  if (!/^[a-z0-9][a-z0-9-]*\.md$/.test(file)) {
+    const k = basename(file, '.md').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'post'
+    throw new Error(`${file}: filename becomes the URL slug; rename to kebab-case, e.g. "${k}.md"`)
+  }
+}
+
+// Posts written by scripts/publish-notes.ts carry this marker after the front matter; it is not rendered.
+const GENERATED_RE = /^\s*<!-- generated from [^>]*-->\s*/
+
+function readPost(dir: string, file: string): Post | null {
+  checkSlugFile(file)
+  const { data, content } = matter(readFileSync(join(dir, file), 'utf8'))
+  if (data.draft === true) return null
+  const { title, date, summary } = validateMeta(file, data)
+  return { slug: basename(file, '.md'), title, date, summary, html: md.parse(content.replace(GENERATED_RE, ''), { async: false }) }
 }
 
 const page = (css: string, o: { title: string; desc: string; path: string; body: string; site: string; current?: boolean }) => `<!doctype html>
