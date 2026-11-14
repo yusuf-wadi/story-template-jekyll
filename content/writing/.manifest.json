@@ -1,4 +1,41 @@
 {
   "version": 1,
-  "posts": {}
+  "posts": {
+    "AI and the Problem with Society.md": {
+      "slug": "ai-and-the-problem-with-society",
+      "date": "2026-11-14"
+    },
+    "Are LLMs Making Us Less Expressive.md": {
+      "slug": "are-llms-making-us-less-expressive",
+      "date": "2026-11-14"
+    },
+    "Conscious Model of Reality.md": {
+      "slug": "conscious-model-of-reality",
+      "date": "2026-11-14"
+    },
+    "Divide and Conquer The Atomization of Society.md": {
+      "slug": "divide-and-conquer-the-atomization-of-society",
+      "date": "2026-11-14"
+    },
+    "I Built A Machine Learning Therapist.md": {
+      "slug": "i-built-a-machine-learning-therapist",
+      "date": "2026-11-14"
+    },
+    "Libbre David 37 Forgery or Halacha.md": {
+      "slug": "libbre-david-37-forgery-or-halacha",
+      "date": "2026-11-14"
+    },
+    "Meta is Entirely Right About the Metaverse.md": {
+      "slug": "meta-is-entirely-right-about-the-metaverse",
+      "date": "2026-11-14"
+    },
+    "Practical Applications of Brain Computer Interfaces.md": {
+      "slug": "practical-applications-of-brain-computer-interfaces",
+      "date": "2026-11-14"
+    },
+    "Qadr in Islam If Everything is Written, Why Try.md": {
+      "slug": "qadr-in-islam-if-everything-is-written-why-try",
+      "date": "2026-11-14"
+    }
+  }
 }
