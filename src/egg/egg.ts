@@ -2,13 +2,14 @@
 //   (1) the facing edge pads of neighbouring lobes are bridged,
 //   (2) current runs through the whole board as a wave from the back of the head to the front,
 //   (3) two glowing traces leave the frontal and temporal lobes and run down to the face,
-//   (4) where an eye, seen in profile and drawn as a schematic symbol, opens: its plates start shorted together, the
-//       upper plate lifts, the curved plate charges, a faint glow settles on it.
+//   (4) where an eye, seen in profile and drawn as a tiny schematic circuit, opens: its lids are a battery whose
+//       plates start shorted together; the upper plate lifts, current runs down the short wires into the diode
+//       that is the eyeball, and the diode lights with a faint glow.
 // The eye is a button: it opens one card with what he's working on now and what's next. "rewire" resets.
 
 import type { Item } from '../types'
 import { esc, placeCard, renderBody, safeHref, MARGIN, NARROW } from '../reader/card'
-import { bridge, ARC_D, EYE, EYE_SHAPE, EYE_TRACES, LOWER_D, PLATE_MASK, PLUS_D, UPPER_D, leadTailD, plateTransform, toD, waveAt, type UV } from './layout'
+import { bridge, ANODE_WIRE_D, CATHODE_WIRE_D, DIODE_D, EYE, EYE_SHAPE, EYE_TRACES, LOWER_D, PLATE_MASK, PLUS_D, UPPER_D, leadTailD, plateTransform, toD, waveAt, type UV } from './layout'
 import './egg.css'
 
 export interface EggProfile {
@@ -21,7 +22,7 @@ export const TIMING = {
   link: 520, linkStagger: 90, // bridges between lobes draw in
   wave: 900, spike: 1100, // current: the wave front crosses the head in `wave`; each trace carries spikes for `spike`
   trace: 950, traceStagger: 140, // the traces to the eye draw in as the wave reaches the front
-  lids: 750, charge: 650, // the upper plate lifts, then the curved plate charges
+  lids: 750, wire: 280, light: 520, // the upper plate lifts, current runs a wire into the diode, the diode lights
 }
 
 const NS = 'http://www.w3.org/2000/svg'
@@ -127,9 +128,9 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     return { g, glow, copper, pad }
   })
 
-  // The eye, in profile, as a schematic symbol: long upper plate, short lower plate, and the curved plate of a
-  // polarized capacitor at the front. The curved plate is clipped to everything below the upper plate, so the
-  // plate uncovers it as it lifts; the upper lead's tail stretches down to the plate while it is lowered.
+  // The eye, in profile, as a tiny circuit: battery plates for lids (long +, short −) powering a diode eyeball.
+  // The diode and its wires are clipped to everything below the upper plate, so the plate uncovers them as it
+  // lifts; the upper lead's tail stretches down to the plate while it is lowered.
   const uid = Math.random().toString(36).slice(2, 8)
   const maskId = `egg-eye-mask-${uid}`
   const eye = svg('g', { transform: `translate(${EYE.x} ${EYE.y})` }, 'egg-eye')
@@ -138,10 +139,12 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
   maskClip.append(mask)
   const shape = svg('path', { d: EYE_SHAPE, fill: 'none', stroke: 'none' }, 'egg-eye-shape') // the outline the e2e checks
   const ball = svg('g', { 'clip-path': `url(#${maskId})` }, 'egg-sym-ball')
-  const arcGlow = svg('path', { d: ARC_D }, 'egg-sym-glow')
-  const arc = svg('path', { d: ARC_D }, 'egg-sym-arc')
-  const charge = svg('path', { d: ARC_D }, 'egg-sym-charge')
-  ball.append(arcGlow, arc, charge)
+  const wires = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-wire'))
+  const currents = [ANODE_WIRE_D, CATHODE_WIRE_D].map((d) => svg('path', { d }, 'egg-sym-current'))
+  const diodeGlow = svg('path', { d: DIODE_D }, 'egg-sym-glow')
+  const diode = svg('path', { d: DIODE_D }, 'egg-sym-diode')
+  const diodeLit = svg('path', { d: DIODE_D }, 'egg-sym-lit')
+  ball.append(...wires, ...currents, diodeGlow, diode, diodeLit)
   const lower = svg('path', { d: LOWER_D }, 'egg-sym-plate')
   const tail = svg('path', { d: leadTailD(0) }, 'egg-sym-plate egg-sym-tail')
   const upper = svg('g', {}, 'egg-sym-upper')
@@ -359,19 +362,24 @@ export function playEgg(root: HTMLElement, profile: EggProfile, nextItems: Item[
     play(eye, [{ opacity: 0 }, { opacity: 1 }], { duration: T.trace * 0.45, easing: 'ease-in' })
   })
   at(t3, () => {
-    // The upper plate lifts off the lower one (a touch past open, then settles); the curved plate it uncovers
-    // charges from top to bottom; then its faint glow comes up and the glass rims catch it.
+    // The battery connects: the upper plate lifts off the lower one (a touch past open, then settles). Current
+    // runs from + down the anode wire, the diode lights (triangle and bar brighten, a faint glow comes up and the
+    // glass rims catch it), and the current carries on out of the cathode back to −.
     eye.classList.add('is-open')
     const ease = (k: number) => 1 - Math.pow(1 - k, 3)
     tween(T.lids, (k) => setLid(k < 0.8 ? 1.06 * ease(k / 0.8) : 1.06 - 0.06 * ((k - 0.8) / 0.2)))
-    const len = pathLen(charge)
-    const o = { duration: T.charge, delay: T.lids * 0.55, easing: 'cubic-bezier(.4,0,.3,1)', fill: 'backwards' as const }
-    play(charge, drawIn(len), o)
-    play(arcGlow, [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { ...o, duration: T.charge + 300 })
-    at(T.lids * 0.55 + T.charge * 0.6, () => announce(true))
+    const t = T.lids * 0.6
+    const wireIn = (p: SVGPathElement, delay: number) =>
+      play(p, drawIn(pathLen(p)), { duration: T.wire, delay, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'backwards' })
+    wireIn(currents[0], t)
+    const lit = { duration: T.light, delay: t + T.wire, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'backwards' as const }
+    play(diodeLit, [{ opacity: 0 }, { opacity: 1 }], lit)
+    play(diodeGlow, [{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }], { ...lit, duration: T.light + 300 })
+    wireIn(currents[1], t + T.wire + T.light * 0.4)
+    at(t + T.wire + T.light * 0.5, () => announce(true))
   })
   at(t3 + T.lids * 0.6, () => { button.hidden = false; button.dataset.state = 'open' })
-  at(t3 + T.lids + T.charge + 300, () => {
+  at(t3 + T.lids * 0.6 + T.wire * 2 + T.light + 300, () => {
     rewire.hidden = false
     play(rewire, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 })
     playing = false

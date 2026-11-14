@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bridge, ARC_BOTTOM, ARC_TOP, EYE, EYE_TRACES, LEAD_X, LOWER_PLATE, LOWER_TRACE, SHUT_DROP, UPPER_PLATE, UPPER_TRACE, leadTailD, plateDrop, waveAt } from '../../src/egg/layout'
+import { bridge, ANODE_WIRE, CATHODE_WIRE, DIODE, DIODE_BAR, DIODE_TRI, EYE, EYE_TRACES, LEAD_X, LOWER_PLATE, LOWER_TRACE, SHUT_DROP, UPPER_PLATE, UPPER_TRACE, leadTailD, plateDrop, waveAt } from '../../src/egg/layout'
 
 type P = [number, number]
 const segOk = (a: P, b: P) => {
@@ -47,17 +47,20 @@ describe('eye traces', () => {
 })
 
 describe('profile eye (schematic symbol)', () => {
-  it('long upper plate, short lower plate, both level and running back; a C plate bulging toward the face between them', () => {
+  it('battery lids: long upper plate, short lower plate, both level and running back; a diode eyeball between them', () => {
     const len = (p: [P, P]) => p[1][0] - p[0][0]
     expect(UPPER_PLATE[0][1]).toBe(UPPER_PLATE[1][1])
     expect(LOWER_PLATE[0][1]).toBe(LOWER_PLATE[1][1])
     expect(len(UPPER_PLATE)).toBeGreaterThan(len(LOWER_PLATE) * 1.3)
     expect(UPPER_PLATE[1][0]).toBeGreaterThan(0) // the head faces left: the plates run back
     expect(UPPER_PLATE[0][0]).toBeLessThan(LOWER_PLATE[0][0])
-    // the curved plate sits between the plates without touching them, at the front
-    expect(ARC_TOP[1]).toBeGreaterThan(UPPER_PLATE[0][1])
-    expect(ARC_BOTTOM[1]).toBeLessThan(LOWER_PLATE[0][1])
-    expect(Math.max(ARC_TOP[0], ARC_BOTTOM[0])).toBeLessThan(LEAD_X)
+    // the diode sits between the plates without touching them, its tip (and cathode bar) toward the face
+    const ys = DIODE_TRI.map((p) => p[1])
+    expect(Math.min(...ys)).toBeGreaterThan(UPPER_PLATE[0][1] + 4)
+    expect(Math.max(...ys)).toBeLessThan(LOWER_PLATE[0][1] - 4)
+    expect(DIODE.tip[0]).toBeLessThan(DIODE.baseX)
+    expect(DIODE_BAR[0][0]).toBe(DIODE.tip[0])
+    expect(DIODE_BAR[1][1] - DIODE_BAR[0][1]).toBe(2 * DIODE.half)
     expect(LOWER_PLATE[0][1] - UPPER_PLATE[0][1]).toBeGreaterThan(EYE.ry * 1.5)
   })
   it('opens from shorted: shut, the upper plate rests just above the lower; open, on its drawn line', () => {
@@ -66,11 +69,27 @@ describe('profile eye (schematic symbol)', () => {
     expect(shutY).toBe(UPPER_PLATE[0][1] + SHUT_DROP)
     expect(LOWER_PLATE[0][1] - shutY).toBeGreaterThan(0)
     expect(LOWER_PLATE[0][1] - shutY).toBeLessThanOrEqual(4)
-    expect(shutY).toBeGreaterThan(ARC_BOTTOM[1]) // shut, the curved plate is all covered
+    expect(shutY).toBeGreaterThan(Math.max(...DIODE_TRI.map((p) => p[1]))) // shut, the diode is all covered
     expect(plateDrop(0.5)).toBeLessThan(plateDrop(0))
     // the upper lead's tail follows the plate down and vanishes when open
     expect(leadTailD(1)).toBe(`M${LEAD_X} ${UPPER_PLATE[0][1]} V${UPPER_PLATE[0][1]}`)
     expect(leadTailD(0)).toBe(`M${LEAD_X} ${UPPER_PLATE[0][1]} V${shutY}`)
+  })
+})
+
+describe('eye circuit', () => {
+  it('wires + plate → anode and cathode → − plate, orthogonal, within the plates', () => {
+    const on = (p: P, pl: [P, P]) => p[1] === pl[0][1] && p[0] > pl[0][0] && p[0] < pl[1][0]
+    expect(on(ANODE_WIRE[0], UPPER_PLATE)).toBe(true)
+    expect(ANODE_WIRE[ANODE_WIRE.length - 1]).toEqual([DIODE.baseX, DIODE.tip[1]])
+    expect(CATHODE_WIRE[0]).toEqual(DIODE.tip)
+    expect(on(CATHODE_WIRE[CATHODE_WIRE.length - 1], LOWER_PLATE)).toBe(true)
+    for (const w of [ANODE_WIRE, CATHODE_WIRE]) for (let k = 1; k < w.length; k++) {
+      expect(w[k][0] === w[k - 1][0] || w[k][1] === w[k - 1][1]).toBe(true)
+    }
+    // the wires stay clear of the feed leads at LEAD_X
+    expect(ANODE_WIRE[0][0]).not.toBe(LEAD_X)
+    expect(CATHODE_WIRE[CATHODE_WIRE.length - 1][0]).not.toBe(LEAD_X)
   })
 })
 
