@@ -135,23 +135,6 @@
       "status": null
     },
     {
-      "id": "tcg-scanner",
-      "section": "projects",
-      "title": "TCG Scanner",
-      "dates": "May – Jun 2026",
-      "summary": "A real-time trading-card scanner that recognizes cards fully on the device, with no cloud calls.",
-      "body": "TCG Scanner is an Expo / React Native app with native Swift and Kotlin frame-processor plugins. Recognition is tiered: a perceptual hash of the art box and set symbol, a BK-tree for Hamming nearest-neighbor lookup, an Apple Vision OCR cross-check, and trigram-indexed Levenshtein matching on the text, all against a local SQLite database.\n\nThe constraint I set was zero cloud: everything runs on the device.",
-      "tags": [
-        "computer vision",
-        "React Native",
-        "Swift",
-        "Kotlin",
-        "on-device"
-      ],
-      "links": [],
-      "status": null
-    },
-    {
       "id": "chess-vis",
       "section": "projects",
       "title": "chess_vis",
@@ -293,7 +276,7 @@
       "title": "PMSI: predictive maintenance",
       "dates": "Oct 2026",
       "summary": "A Toyota hackathon project: unsupervised anomaly detection over vehicle telemetry with subsystem-level fault attribution.",
-      "body": "I was the sole author of the ML inference server for PMSI, a team entry in an internal Toyota hackathon. The data was about 7 GB of CAN telemetry from 51 vehicles, with no failure labels, so the model had to be unsupervised.\n\nI built a PCA baseline and a PyTorch masked autoencoder and combined them into a hybrid detector. Per-feature reconstruction error gives both an anomaly score and the subsystem likely at fault. On a synthetic fault-injection test, brake and engine faults were detected about 100% of the time. The scorer is a stateless FastAPI service with weights exported to numpy, so it runs without torch on an AWS Lambda container.",
+      "body": "I was the sole author of the ML inference server for PMSI, a team entry in an internal Toyota hackathon. The telemetry had no failure labels, so the model had to be unsupervised.\n\nI built a PCA baseline and a PyTorch masked autoencoder and combined them into a hybrid detector. Per-feature reconstruction error gives both an anomaly score and the subsystem likely at fault. The scorer is a stateless FastAPI service with weights exported to numpy, so it runs without torch on an AWS Lambda container.",
       "tags": [
         "ML",
         "anomaly detection",
@@ -386,22 +369,6 @@
         "SQL",
         "Spark",
         "Docker"
-      ],
-      "links": [],
-      "status": null
-    },
-    {
-      "id": "scale-ai",
-      "section": "work",
-      "title": "Scale AI: data-annotation contract",
-      "dates": "Oct 2023 – May 2024",
-      "summary": "A remote contract reviewing and writing code as training data for code models.",
-      "body": "This was a data-annotation contract, found through Upwork. I reviewed, debugged and rated code responses, and wrote code and test cases as training data for code models. The work included side-by-side ratings, written justifications and tool-use prompts.\n\nI worked across Python, Java, React, Swift, SQL and C++. It was annotation work and did not involve training or evaluating models.",
-      "tags": [
-        "data annotation",
-        "code review",
-        "contract",
-        "Python"
       ],
       "links": [],
       "status": null
@@ -546,27 +513,6 @@
       "status": null
     },
     {
-      "id": "kinesis-vr",
-      "section": "worlds",
-      "title": "Kinesis",
-      "dates": "2022",
-      "summary": "A VR telekinesis game design with optional control through alpha-wave energy.",
-      "body": "Kinesis is a Unity VR game concept in which the player moves objects with telekinesis, and an optional EEG alpha-wave signal can modulate how much energy they have. It exists as a design and a prototype.\n\nIt was an attempt to join two of my interests, games and brain-computer interfaces.",
-      "tags": [
-        "VR",
-        "Unity",
-        "BCI",
-        "game design"
-      ],
-      "links": [
-        {
-          "label": "GitHub",
-          "url": "https://github.com/yusuf-wadi/kinesis"
-        }
-      ],
-      "status": null
-    },
-    {
       "id": "tiltshift",
       "section": "worlds",
       "title": "TiltShift",
@@ -638,13 +584,14 @@
       "section": "craft",
       "title": "Languages",
       "dates": "Ongoing",
-      "summary": "English (native), Arabic (fluent) and basic Japanese.",
-      "body": "I speak English natively and Arabic fluently, and I have basic Japanese from the Japanese language club at university.",
+      "summary": "English (native), Arabic (fluent), Japanese (basic) and Spanish (basic).",
+      "body": "I speak English natively and Arabic fluently. My Japanese and Spanish are basic; the Japanese is from the Japanese language club at university.",
       "tags": [
         "languages",
         "English",
         "Arabic",
-        "Japanese"
+        "Japanese",
+        "Spanish"
       ],
       "links": [],
       "status": null
