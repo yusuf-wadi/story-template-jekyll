@@ -584,8 +584,8 @@
       "section": "next",
       "title": "The Annex",
       "dates": "2026",
-      "summary": "I'm building The Annex, a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL. I wrote the story, made the designs and designed the architecture. It isn't finished yet.",
-      "body": "I'm building The Annex, a first-person game of procedural liminal spaces. I wrote the story, I made the designs, I designed the architecture, and every design choice was mine. It's my first large-scale build with agentic workflows: AI agents write the code to my design.\n\nIt's written in Rust with Bevy and WGSL. Rooms and corridors are grown from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.\n\nIt's still in progress. I'll share it properly when it's finished.",
+      "summary": "A first-person game about an abandoned research lab and a pocket dimension that builds places room by room, and has been doing it unwatched for years. I wrote the story and designed the architecture; AI agents write the code to my design.",
+      "body": "An urban explorer breaks into Janus Labs, a research lab that closed years ago, and follows a corridor that is on no plan. At its end is a prototype that never switched off: a pocket dimension that generates places the way a language model writes, one room, then the most likely next room. Its last prompt never finished, and it has been building, unwatched, ever since.\n\nI wrote the story, made the designs and designed the architecture, and every design choice is mine. It's my first large-scale build with agentic workflows: AI agents write the code to my design. It's first-person, in Rust with Bevy and WGSL. Rooms are grown from a relational grammar in an editable recipe, and recipes can mutate and cross over. Invariants are checked before one world replaces another, so the player never steps into a broken space.\n\nIt's still in progress. I'll share it properly when it's finished.",
       "tags": [
         "Rust",
         "Bevy",
@@ -599,11 +599,16 @@
     {
       "id": "next-two",
       "section": "next",
-      "title": "[YUSUF TO WRITE]",
-      "dates": "",
-      "summary": "[YUSUF TO WRITE]",
-      "body": "[YUSUF TO WRITE]",
-      "tags": [],
+      "title": "Do a model's silent thoughts do real work?",
+      "dates": "Dec 2026",
+      "summary": "A lab study of whether a language model's silent, continuous reasoning does real computational work, and whether it has an axis we can read and train.",
+      "body": "Some language models can reason without writing anything down, in continuous internal \"thoughts\". I'm asking whether those thoughts do real computational work or just add extra positions, and whether there is an axis of interpretability we could use to train them. The neuroscience angle: I treat written reasoning and silent latent reasoning as complementary frequency bands, coarse and robust versus fine and detailed, and compare the hidden process with how people think serially. A write-up is coming in mid-December, reported honestly whether the result is positive or null.",
+      "tags": [
+        "interpretability",
+        "latent reasoning",
+        "computational neuroscience",
+        "research"
+      ],
       "links": [],
       "status": "upcoming"
     }
