@@ -249,6 +249,5 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     },
     /** End any push/pull at once (every route change does this before it renders). */
     settleMotion,
-    setProgress,
   }
 }

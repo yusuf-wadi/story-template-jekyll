@@ -6,8 +6,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
 
 interface Lit { grad: SVGRadialGradientElement; path: SVGElement; toLocal(sx: number, sy: number): [number, number] }
 
-/** Head source coordinates -> stage fraction (HEAD_TRANSFORM: scale .88 into an 800 viewBox). */
-const headToStage = (x: number, y: number): [number, number] => [(x * 0.88 - 74.8) / 800, (y * 0.88 - 38.3) / 800]
 /** How far the eye's light reaches, in head units. */
 const EYE_REACH = 260
 
@@ -17,6 +15,17 @@ export function mountLight(stage: HTMLElement): void {
   const bubble = stage.querySelector<SVGSVGElement>('.writing-mark svg')
   const headG = headSvg?.querySelector<SVGGElement>(':scope > g')
   if (!headSvg || !bubble || !headG) return
+  // Head source coordinates <-> stage fraction, from the head <g>'s own transform (so re-placing the head can't drift).
+  const m = headG.transform.baseVal.consolidate()?.matrix ?? new DOMMatrix()
+  const hm = new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f])
+  const inv = hm.inverse()
+  const vbW = headSvg.viewBox.baseVal.width || 800, vbH = headSvg.viewBox.baseVal.height || 800
+  const headToStage = (x: number, y: number): [number, number] =>
+    [(hm.a * x + hm.c * y + hm.e) / vbW, (hm.b * x + hm.d * y + hm.f) / vbH]
+  const stageToHead = (sx: number, sy: number): [number, number] => {
+    const X = sx * vbW, Y = sy * vbH
+    return [inv.a * X + inv.c * Y + inv.e, inv.b * X + inv.d * Y + inv.f]
+  }
 
   const lit: Lit[] = []
   const eyeLit: Lit[] = []
@@ -45,8 +54,8 @@ export function mountLight(stage: HTMLElement): void {
 
   const headOutline = headG.querySelector<SVGPathElement>('.head-outline')!
   const bubbleBody = bubble.querySelector<SVGPathElement>('.bubble-body')!
-  // Head: stage px -> viewBox (800) -> source coords (inverse of HEAD_TRANSFORM, scale .88).
-  add(headSvg, headOutline, 'head-light', 320 / 0.88, (sx, sy) => [(sx * 800 + 74.8) / 0.88, (sy * 800 + 38.3) / 0.88], headG)
+  // Head: stage fraction -> viewBox -> source coords (inverse of the head transform).
+  add(headSvg, headOutline, 'head-light', 320 / (Math.hypot(hm.a, hm.b) || 1), stageToHead, headG)
   // Bubble: stage fraction -> its viewBox (100x50), from where it sits on the stage (measured, so CSS can move it).
   let rect = stage.getBoundingClientRect()
   let bub = bubble.getBoundingClientRect()
@@ -98,7 +107,8 @@ export function mountLight(stage: HTMLElement): void {
   const setOn = (v: boolean) => { on = v; for (const l of lit) l.path.style.opacity = v ? '1' : '0' }
 
   document.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'touch') return
+    // No work while a section or the list covers the profile; the light re-seeds from the next move once it shows.
+    if (e.pointerType === 'touch' || stage.closest('[hidden]')) { if (on) setOn(false); return }
     const x = (e.clientX - rect.left) / rect.width, y = (e.clientY - rect.top) / rect.height
     if (!on) { cx = tx = x; cy = ty = y; setOn(true) }
     tx = x; ty = y

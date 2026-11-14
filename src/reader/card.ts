@@ -29,15 +29,20 @@ export function safeHref(url: string): string | null {
   }
 }
 
-const md = new Marked({
-  renderer: {
-    link({ href, title, tokens }) {
-      const text = this.parser.parseInline(tokens)
-      const ok = safeHref(href)
-      return ok ? `<a href="${esc(ok)}"${title ? ` title="${esc(title)}"` : ''}>${text}</a>` : text
-    },
+/** One markdown policy for cards, the list and the blog build: raw HTML shows as text; links/images keep only http/https/mailto. */
+export const SAFE_RENDERER = {
+  html({ text }: { text: string }) { return esc(text) },
+  link(this: { parser: { parseInline(t: unknown[]): string } }, { href, title, tokens }: { href: string; title?: string | null; tokens: unknown[] }) {
+    const text = this.parser.parseInline(tokens)
+    const ok = safeHref(href)
+    return ok ? `<a href="${esc(ok)}"${title ? ` title="${esc(title)}"` : ''}>${text}</a>` : text
   },
-})
+  image({ href, title, text }: { href: string; title?: string | null; text: string }) {
+    const ok = safeHref(href)
+    return ok ? `<img src="${esc(ok)}" alt="${esc(text)}"${title ? ` title="${esc(title)}"` : ''} loading="lazy">` : esc(text)
+  },
+}
+const md = new Marked({ renderer: SAFE_RENDERER as never })
 export function renderBody(src: string): string {
   return md.parse(src, { async: false })
 }

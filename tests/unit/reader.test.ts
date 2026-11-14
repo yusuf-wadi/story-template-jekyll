@@ -16,6 +16,18 @@ describe('safeHref', () => {
 })
 
 describe('renderBody', () => {
+  it('shows raw HTML as text, like the blog build', () => {
+    const html = renderBody('hi <b onclick="x()">there</b>\n\n<script>alert(1)</script>')
+    expect(html).not.toContain('<b')
+    expect(html).not.toContain('<script')
+    expect(html).toContain('&lt;b onclick')
+  })
+  it('keeps only safe image sources', () => {
+    expect(renderBody('![ok](https://a.dev/x.png)')).toContain('<img src="https://a.dev/x.png" alt="ok"')
+    const bad = renderBody('![alt text](javascript:alert(1))')
+    expect(bad).not.toContain('<img')
+    expect(bad).toContain('alt text')
+  })
   it('keeps safe links and renders unsafe ones as plain text', () => {
     const html = renderBody('[ok](https://a.dev) and [bad](javascript:alert(1))')
     expect(html).toContain('<a href="https://a.dev">ok</a>')

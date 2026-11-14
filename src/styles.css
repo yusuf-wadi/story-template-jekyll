@@ -96,24 +96,12 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 }
 /* ---- easter egg: the circuit closes, an eye opens */
 .egg-board { pointer-events: none; }
-.egg-link-glow, .egg-trace-glow { fill: none; stroke: var(--trace-hi); stroke-opacity: .35; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; filter: blur(2px); }
+.egg-link-glow, .egg-trace-glow { fill: none; stroke: var(--trace-hi); stroke-opacity: .2; stroke-width: 4.4; stroke-linecap: round; stroke-linejoin: round; filter: blur(1.4px); }
 .egg-link-copper, .egg-trace-copper { fill: none; stroke: var(--trace-lit); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.egg-trace-pad { fill: var(--trace-hi); filter: drop-shadow(0 0 2px var(--trace-hi)); }
+.egg-trace-pad { fill: var(--trace-hi); filter: drop-shadow(0 0 1px var(--trace-hi)); }
 .egg-link:not(.is-on), .egg-trace:not(.is-on) { opacity: 0; }
 .egg-spike { fill: none; stroke: var(--trace-core); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1.6 5 1.6 30; filter: drop-shadow(0 0 2px var(--trace-hi)); }
 .is-booted .pcb-chip { stroke: var(--trace-hi); stroke-opacity: .55; transition: stroke .8s, stroke-opacity .8s; }
-.egg-eye-halo { fill: var(--trace-hi); opacity: 0; filter: blur(10px); }
-.egg-eye-white { fill: none; } /* the outline the e2e checks; the eye itself is open line art */
-.egg-eye-arc { fill: none; stroke: var(--trace-hi); stroke-width: 2.2; stroke-linecap: round; filter: drop-shadow(0 0 2px var(--trace-hi)); }
-.egg-eye-irisarc { fill: none; stroke: var(--trace); stroke-width: 1.8; stroke-linecap: round; }
-.egg-eye-pupil { fill: var(--trace-core); filter: drop-shadow(0 0 2px var(--trace-hi)); }
-.egg-eye-rim { fill: none; stroke: var(--trace-lit); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.egg-eye-upper { stroke: var(--trace-hi); }
-.egg-eye:not(.is-open) .egg-eye-ball, .egg-eye:not(.is-open) .egg-eye-halo { opacity: 0; }
-.egg-eye.is-open .egg-eye-halo { opacity: .7; animation: egg-glow 4.2s ease-in-out infinite; }
-.egg-eye.is-open .egg-eye-irisarc { animation: egg-iris 4.2s ease-in-out infinite; }
-@keyframes egg-glow { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
-@keyframes egg-iris { 0%, 100% { stroke: var(--trace); } 50% { stroke: var(--trace-hi); } }
 .egg-eye-btn { position: absolute; width: max(42px, var(--eye-w, 46px)); aspect-ratio: 1.15; transform: translate(-50%, -50%); padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; z-index: 2; }
 .egg-eye-btn:focus { outline: none; }
 .egg-eye-btn:focus-visible { outline: 2px solid var(--trace-hi); outline-offset: 3px; }
@@ -137,7 +125,6 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .egg-item-body a, .egg-item-links a { color: var(--trace-hi); }
 .egg-item-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; margin: 6px 0 0; }
 @media (prefers-reduced-motion: reduce) {
-  .egg-eye.is-open .egg-eye-halo, .egg-eye.is-open .egg-eye-irisarc { animation: none; }
   .is-booted .pcb-chip { transition: none; }
 }
 

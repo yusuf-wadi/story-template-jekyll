@@ -41,3 +41,48 @@ test('hovering a partly wired lobe lights a blue rim instead of greying the boar
   expect(hot.fillOpacity).toBeLessThanOrEqual(rest.fillOpacity + 0.03)
   expect(hot.stroke).toMatch(/^rgb\((\d+), (\d+), 255\)$/) // electric blue, not white
 })
+
+test('cursor light does no work while the profile is hidden, and tracks the pointer when shown', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('#region-frontal')).toBeVisible()
+  const cx = () => page.evaluate(() => document.getElementById('head-light')!.getAttribute('cx'))
+  const frames = (n: number) => page.evaluate((n) => new Promise<void>((res) => {
+    const step = (k: number) => (k ? requestAnimationFrame(() => step(k - 1)) : res())
+    step(n)
+  }), n)
+  await page.mouse.move(300, 300)
+  await page.mouse.move(310, 305)
+  await expect.poll(cx).not.toBeNull()
+  // The light's gradient centre is in head source units: the inverse of the head <g> transform.
+  const expected = await page.evaluate(() => {
+    const stage = document.querySelector('.stage')!.getBoundingClientRect()
+    const svg = document.querySelector<SVGSVGElement>('.stage > svg')!
+    const g = svg.querySelector<SVGGElement>(':scope > g')!
+    const m = g.transform.baseVal.consolidate()!.matrix
+    const vb = svg.viewBox.baseVal
+    const X = ((310 - stage.left) / stage.width) * vb.width, Y = ((305 - stage.top) / stage.height) * vb.height
+    const inv = new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f]).inverse()
+    return inv.a * X + inv.c * Y + inv.e
+  })
+  await expect.poll(async () => Math.abs(Number(await cx()) - expected), { timeout: 3000 }).toBeLessThan(1)
+  await page.evaluate(() => { location.hash = '#projects' })
+  await expect(page.locator('canvas')).toBeVisible()
+  const before = await cx()
+  await page.mouse.move(900, 600)
+  await page.mouse.move(950, 650)
+  await frames(5)
+  expect(await cx()).toBe(before)
+})
+
+test('share and crawler metadata come from content.json; noscript has the plain links', async ({ page }) => {
+  const c = JSON.parse(readFileSync('content/content.json', 'utf8'))
+  await page.goto('/')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', c.person.tagline)
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', c.person.name)
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', c.person.tagline)
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary')
+  const ns = await page.locator('noscript').innerHTML()
+  expect(ns).toContain(c.person.name)
+  for (const l of c.person.links) expect(ns).toContain(l.url)
+  expect(ns).toContain('/writing/')
+})

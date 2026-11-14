@@ -3,28 +3,15 @@ import matter from 'gray-matter'
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { esc, safeHref } from '../src/reader/card'
+import { esc, SAFE_RENDERER } from '../src/reader/card'
 
 export const SITE_URL = 'https://ywadi-portfol.vercel.app'
 const CSS_PATH = fileURLToPath(new URL('../src/writing.css', import.meta.url))
 
 interface Post { slug: string; title: string; date: string; summary: string; html: string }
 
-// Raw HTML in markdown is shown as text, never passed through; links/images keep only http/https/mailto.
-const md = new Marked({
-  renderer: {
-    html({ text }) { return esc(text) },
-    link({ href, title, tokens }) {
-      const text = this.parser.parseInline(tokens)
-      const ok = safeHref(href)
-      return ok ? `<a href="${esc(ok)}"${title ? ` title="${esc(title)}"` : ''}>${text}</a>` : text
-    },
-    image({ href, title, text }) {
-      const ok = safeHref(href)
-      return ok ? `<img src="${esc(ok)}" alt="${esc(text)}"${title ? ` title="${esc(title)}"` : ''} loading="lazy">` : esc(text)
-    },
-  },
-})
+// Raw HTML in markdown is shown as text, never passed through; links/images keep only http/https/mailto (shared with the cards).
+const md = new Marked({ renderer: SAFE_RENDERER as never })
 
 const xml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]!)
 const fmtDate = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
