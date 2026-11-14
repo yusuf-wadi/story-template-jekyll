@@ -30,6 +30,10 @@ const xml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 const fmtDate = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
 
 function readPost(dir: string, file: string): Post | null {
+  if (!/^[a-z0-9][a-z0-9-]*\.md$/.test(file)) {
+    const k = basename(file, '.md').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'post'
+    throw new Error(`${file}: filename becomes the URL slug; rename to kebab-case, e.g. "${k}.md"`)
+  }
   const { data, content } = matter(readFileSync(join(dir, file), 'utf8'))
   if (data.draft === true) return null
   const need = (k: string) => {
@@ -38,7 +42,7 @@ function readPost(dir: string, file: string): Post | null {
     return v.trim()
   }
   const title = need('title'), date = need('date'), summary = need('summary')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) throw new Error(`${file}: "date" must be YYYY-MM-DD, got "${date}"`)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(+new Date(date + 'T00:00:00Z')) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date) throw new Error(`${file}: "date" must be YYYY-MM-DD, got "${date}"`)
   return { slug: basename(file, '.md'), title, date, summary, html: md.parse(content, { async: false }) }
 }
 
@@ -86,9 +90,10 @@ export function buildWriting(srcDir: string, outDir: string, siteUrl: string = S
     body: `<h1>Writing</h1>\n${posts.length ? `<ul class="posts">\n${list}\n</ul>` : '<p class="summary">Nothing here yet.</p>'}\n<a class="back" href="/">&larr; Home</a>`,
   }))
 
-  const items = posts.map(p => `<item><title>${xml(p.title)}</title><link>${site}/writing/${p.slug}/</link><guid isPermaLink="true">${site}/writing/${p.slug}/</guid><pubDate>${new Date(p.date + 'T00:00:00Z').toUTCString()}</pubDate><description>${xml(p.summary)}</description></item>`).join('\n')
+  const items = posts.map(p => `<item><title>${xml(p.title)}</title><link>${xml(`${site}/writing/${p.slug}/`)}</link><guid isPermaLink="true">${xml(`${site}/writing/${p.slug}/`)}</guid><pubDate>${new Date(p.date + 'T00:00:00Z').toUTCString()}</pubDate><description>${xml(p.summary)}</description></item>`).join('\n')
   writeFileSync(join(root, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"><channel><title>Yusuf Wadi: Writing</title><link>${site}/writing/</link><description>Notes and essays by Yusuf Wadi.</description><language>en</language>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Yusuf Wadi: Writing</title><link>${xml(site)}/writing/</link><description>Notes and essays by Yusuf Wadi.</description><language>en</language>
+<atom:link href="${xml(site)}/writing/rss.xml" rel="self" type="application/rss+xml"/>${posts.length ? `\n<lastBuildDate>${new Date(posts[0].date + 'T00:00:00Z').toUTCString()}</lastBuildDate>` : ''}
 ${items}
 </channel></rss>
 `)

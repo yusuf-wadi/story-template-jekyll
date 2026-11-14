@@ -65,4 +65,37 @@ describe('buildWriting', () => {
     expect(page).not.toContain('javascript:')
     expect(page).toContain('href="https://example.com"')
   })
+
+  it('rejects unsafe slugs, suggesting kebab-case', () => {
+    add('My Post.md', post({ title: 't', date: '2026-01-02', summary: 's' }))
+    expect(() => buildWriting(src, out, SITE)).toThrow(/My Post\.md.*my-post\.md/)
+  })
+
+  it('rejects impossible dates and missing summary', () => {
+    add('a.md', post({ title: 't', date: '2026-02-31', summary: 's' }))
+    expect(() => buildWriting(src, out, SITE)).toThrow(/a\.md.*date/)
+    add('a.md', post({ title: 't', date: '2026-02-03' }))
+    expect(() => buildWriting(src, out, SITE)).toThrow(/a\.md.*summary/)
+  })
+
+  it('handles unquoted YAML dates (Date object) with the right day', () => {
+    add('a.md', '---\ntitle: T\ndate: 2026-03-09\nsummary: S\n---\nbody\n')
+    const { posts } = buildWriting(src, out, SITE)
+    expect(posts[0].date).toBe('2026-03-09')
+    expect(readFileSync(join(out, 'writing/a/index.html'), 'utf8')).toContain('March 9, 2026')
+  })
+
+  it('rss is well formed with channel metadata', () => {
+    add('a.md', post({ title: 'A & B', date: '2026-03-09', summary: 'x < y' }))
+    add('b.md', post({ title: 'B', date: '2026-01-01', summary: 's' }))
+    buildWriting(src, out, SITE)
+    const rss = readFileSync(join(out, 'writing/rss.xml'), 'utf8')
+    expect(rss.match(/<pubDate>([^<]*)<\/pubDate>/)![1]).toMatch(/^\w{3}, \d{2} \w{3} \d{4} 00:00:00 GMT$/)
+    for (const t of ['title', 'link', 'description']) expect(rss).toMatch(new RegExp(`<channel><title>[^]*<${t}>`))
+    expect(rss).toContain('xmlns:atom="http://www.w3.org/2005/Atom"')
+    expect(rss).toContain(`<atom:link href="${SITE}/writing/rss.xml" rel="self" type="application/rss+xml"/>`)
+    expect(rss).toContain('<lastBuildDate>Mon, 09 Mar 2026 00:00:00 GMT</lastBuildDate>')
+    expect(rss.replace(/&(amp|lt|gt|quot|apos);/g, '')).not.toMatch(/&/)
+    expect(rss.match(/<item>/g)).toHaveLength(rss.match(/<\/item>/g)!.length)
+  })
 })
