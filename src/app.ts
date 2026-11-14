@@ -1,9 +1,10 @@
-import type { Content, Layout } from './types'
+import type { Content, Layout, SectionId } from './types'
 import type { Progress } from './progress'
 import { parseRoute, toHash } from './router'
 import { mountProfile } from './profile/profile'
+import { createSectionScene } from './map/sectionScene'
 
-export function startApp(root: HTMLElement, content: Content, _layout: Layout, progress: Progress): void {
+export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress): void {
   const profile = mountProfile(root, {
     content,
     progress,
@@ -14,8 +15,34 @@ export function startApp(root: HTMLElement, content: Content, _layout: Layout, p
   placeholder.hidden = true
   root.append(placeholder)
 
+  const sceneHost = document.createElement('div')
+  sceneHost.className = 'scene-host'
+  sceneHost.hidden = true
+  const hoverLabel = document.createElement('div')
+  hoverLabel.className = 'hover-label'
+  hoverLabel.dataset.hoverLabel = ''
+  root.append(sceneHost, hoverLabel)
+  const scene = createSectionScene(sceneHost, (id) => progress.isVisited(id))
+  scene.onHover((l) => { hoverLabel.textContent = l ?? '' })
+  scene.onNodeClick((id) => {
+    if (currentSection) location.hash = toHash({ view: 'item', section: currentSection, item: id })
+  })
+  let currentSection: SectionId | null = null
+
   const render = () => {
     const route = parseRoute(location.hash, content)
+    if (route.view === 'section' || route.view === 'item') {
+      profile.hide()
+      placeholder.hidden = true
+      sceneHost.dataset.view = route.view
+      if (currentSection !== route.section) {
+        currentSection = route.section
+        const items = content.items.filter((i) => i.section === route.section)
+        void scene.enter(route.section, layout.sections[route.section], items)
+      }
+      return
+    }
+    if (currentSection) { currentSection = null; void scene.exit(); hoverLabel.textContent = '' }
     if (route.view === 'profile') {
       placeholder.hidden = true
       profile.show()

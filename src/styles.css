@@ -26,3 +26,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
   .region, .region-label { transition: none; }
   .region.is-pulse { animation: none; }
 }
+.scene-host { position: fixed; inset: 0; }
+.scene-host canvas { display: block; width: 100%; height: 100%; }
+.hover-label { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); pointer-events: none; font-size: .9rem; letter-spacing: .02em; opacity: .9; }
+.hover-label:empty { display: none; }
