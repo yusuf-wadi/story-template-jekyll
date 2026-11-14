@@ -276,7 +276,7 @@
       "title": "PMSI: predictive maintenance",
       "dates": "Oct 2026",
       "summary": "A Toyota hackathon project: unsupervised anomaly detection over vehicle telemetry with subsystem-level fault attribution.",
-      "body": "I was the sole author of the ML inference server for PMSI, a team entry in an internal Toyota hackathon. The telemetry had no failure labels, so the model had to be unsupervised.\n\nI built a PCA baseline and a PyTorch masked autoencoder and combined them into a hybrid detector. Per-feature reconstruction error gives both an anomaly score and the subsystem likely at fault. The scorer is a stateless FastAPI service with weights exported to numpy, so it runs without torch on an AWS Lambda container.",
+      "body": "I was the sole author of the ML inference server for PMSI, a team entry in an internal Toyota hackathon. The data was about 7 GB of CAN telemetry from 51 vehicles, with no failure labels, so the model had to be unsupervised.\n\nI built a PCA baseline and a PyTorch masked autoencoder and combined them into a hybrid detector. Per-feature reconstruction error gives both an anomaly score and the subsystem likely at fault. On a synthetic fault-injection test, brake and engine faults were detected about 100% of the time. The scorer is a stateless FastAPI service with weights exported to numpy, so it runs without torch on an AWS Lambda container.",
       "tags": [
         "ML",
         "anomaly detection",
@@ -457,8 +457,8 @@
       "section": "worlds",
       "title": "Liminal Bevy",
       "dates": "Oct 2026",
-      "summary": "A first-person generator of procedural liminal spaces, written in Rust with Bevy and WGSL.",
-      "body": "Liminal Bevy grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.\n\nIt is an exploration of how much feeling you can get from rules about adjacency and light alone. I built it with AI-assisted tooling, with the design and direction mine.",
+      "summary": "A passion project: a first-person generator of procedural liminal spaces in Rust with Bevy and WGSL, and my first large project built with agentic workflows.",
+      "body": "Liminal Bevy is a passion project, and the first large-scale project I have built with agentic workflows. I directed the design and the system, and most of the code was written by AI agents.\n\nThe game grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.",
       "tags": [
         "Rust",
         "Bevy",
