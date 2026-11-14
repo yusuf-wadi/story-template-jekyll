@@ -4,7 +4,8 @@ import layoutRaw from '../content/layout.json'
 import { validateContent } from './content'
 import { Progress } from './progress'
 import { startApp } from './app'
-import type { Layout } from './types'
+import { renderList } from './list/list'
+import type { Content, Layout } from './types'
 
 export function hasWebGL(): boolean {
   try {
@@ -16,10 +17,20 @@ export function hasWebGL(): boolean {
 let storage: Storage | null = null
 try { storage = window.localStorage } catch { storage = null }
 
-startApp(
-  document.getElementById('app')!,
-  validateContent(raw),
-  layoutRaw as unknown as Layout,
-  new Progress(storage),
-  { webgl: hasWebGL() },
-)
+const root = document.getElementById('app')!
+let content: Content | null = null
+try {
+  content = validateContent(raw)
+  startApp(root, content, layoutRaw as unknown as Layout, new Progress(storage), { webgl: hasWebGL() })
+} catch (e) {
+  // Never ship a blank page: fall back to the plain list, or a plain message if the content itself is broken.
+  console.warn('startApp failed; showing the plain list instead.', e)
+  root.replaceChildren()
+  if (content) renderList(root, content, { backToBrain: false })
+  else {
+    const p = document.createElement('p')
+    p.className = 'boot-error'
+    p.textContent = 'This page failed to load. Please try again later.'
+    root.append(p)
+  }
+}

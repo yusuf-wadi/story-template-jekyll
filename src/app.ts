@@ -12,9 +12,11 @@ import { renderList } from './list/list'
 export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress, opts: { webgl?: boolean } = {}): void {
   if (opts.webgl === false) {
     // No WebGL: every route is the plain list, and it stays there.
-    if (location.hash !== '#list') location.hash = '#list'
+    // Replace, never push: a pushed #list would make Back land on the old hash and get forced forward again.
+    const force = () => { if (location.hash !== '#list') history.replaceState(null, '', '#list') }
+    force()
     renderList(root, content, { backToBrain: false })
-    window.addEventListener('hashchange', () => { if (location.hash !== '#list') location.hash = '#list' })
+    window.addEventListener('hashchange', force)
     return
   }
   // Navigate and render synchronously so rapid input (click then key) never sees a stale route.

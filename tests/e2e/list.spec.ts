@@ -44,3 +44,38 @@ test('back to the brain returns to the profile', async ({ page }, info) => {
   await page.getByRole('link', { name: /back to the brain/i }).click()
   await expect(page.locator('.profile')).toBeVisible()
 })
+
+test('if the app throws while starting, the list renders instead of a blank page', async ({ page }, info) => {
+  test.skip(info.project.name !== 'chromium', 'needs a WebGL-capable browser to break')
+  // A context that claims WebGL but is unusable makes three throw inside startApp.
+  await page.addInitScript(() => {
+    const orig = HTMLCanvasElement.prototype.getContext
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
+      if (type.startsWith('webgl')) return {} as RenderingContext
+      return (orig as (...a: unknown[]) => RenderingContext | null).call(this, type, ...rest)
+    } as typeof orig
+  })
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/')
+  await expect(page.locator('.list-main h1')).toHaveText(content.person.name)
+  await expect(page.locator('article')).toHaveCount(content.items.length)
+  await expect(page.locator('.profile')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
+test('without WebGL, Back leaves the site instead of bouncing back to #list', async ({ page }, info) => {
+  test.skip(info.project.name !== 'no-webgl', 'WebGL-less project only')
+  await page.goto('about:blank')
+  await page.goto('/')
+  await expect(page).toHaveURL(/#list$/)
+  // In-page hash changes are forced back to #list by replacing the entry, not pushing a new one.
+  const len = await page.evaluate(() => history.length)
+  await page.evaluate(() => { location.hash = '#work' })
+  await expect(page).toHaveURL(/#list$/)
+  expect(await page.evaluate(() => history.length)).toBe(len + 1)
+  await page.goBack() // #work was replaced by #list; Back returns to the first #list
+  await expect(page).toHaveURL(/#list$/)
+  await page.goBack() // and Back from there leaves the site
+  await expect(page).toHaveURL('about:blank')
+})
