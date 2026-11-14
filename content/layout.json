@@ -114,7 +114,7 @@
       "clusters": [
         {
           "id": 0,
-          "label": "built \u00b7 model",
+          "label": "Models & math",
           "centroid": [
             1.417,
             -2.181,
@@ -124,7 +124,7 @@
         },
         {
           "id": 1,
-          "label": "signal \u00b7 attention",
+          "label": "Signals & automation",
           "centroid": [
             -4.091,
             3.484,
@@ -134,7 +134,7 @@
         },
         {
           "id": 2,
-          "label": "fine \u00b7 tuning",
+          "label": "Conversational AI",
           "centroid": [
             1.177,
             2.407,
@@ -218,7 +218,7 @@
       "clusters": [
         {
           "id": 0,
-          "label": "toyota \u00b7 ev",
+          "label": "Toyota",
           "centroid": [
             -0.925,
             -0.88,
@@ -228,7 +228,7 @@
         },
         {
           "id": 1,
-          "label": "sql \u00b7 company",
+          "label": "Early career",
           "centroid": [
             1.85,
             1.76,

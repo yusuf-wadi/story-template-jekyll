@@ -619,5 +619,11 @@
       "status": "upcoming"
     }
   ],
-  "clusterLabelOverrides": {}
+  "clusterLabelOverrides": {
+    "mtg-vector-math": "Models & math",
+    "autoapply": "Signals & automation",
+    "lumii": "Conversational AI",
+    "toyota-charging-data": "Toyota",
+    "seeloz": "Early career"
+  }
 }
