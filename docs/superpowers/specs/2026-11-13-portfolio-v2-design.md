@@ -72,13 +72,13 @@ nodes of that section's 3D map. About 1.2 s, eased. Reduced-motion users get a f
 - When every item in a section is visited, the region is complete: the last trace lands, the region's mask
   fills fully and its edge pads light up, ready to connect to neighboring regions.
 
-### 6. Easter egg — the circuit closes
-When all five regions are complete, the pads connect across region borders, current visibly flows through the
-whole head, and the profile "boots": the traces pulse in a spike pattern. Then new glowing traces route
-themselves out of the head and across the black background, drawing in one by one. Each trace ends in a
-terminal pad. Clicking a pad opens a short card about **what he's working on now or what's coming up** (one card
-per trace). These items live in `content.json` under a `next` section (`now` / `upcoming` status), and he writes
-the wording. A "rewire" button resets progress.
+### 6. Easter egg — the eye opens (updated 11/13 per Yusuf)
+When all five regions are complete, the traces light up and the facing edge pads link together across the
+lobes. Current then pulses through the whole board toward the front of the head, and a single glowing trace
+comes out of the frontal lobe and runs to the face, where **an eye opens and glows**. Clicking the eye opens a
+card with what he's working on now and what's coming next (the `next` section's items, grouped "Now" /
+"Next"; he writes the wording). Later visits show the eye already open. A "rewire" button resets progress.
+Reduced motion: final state instantly.
 
 ### 7. Writing (blog)
 - A place for his thoughts instead of Medium. Posts are Markdown files in `content/writing/<slug>.md` with
