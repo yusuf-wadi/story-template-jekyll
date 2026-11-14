@@ -182,6 +182,8 @@ export function mountReader(root: HTMLElement, opts: ReaderOptions = {}): Reader
     s.borderColor = `rgba(${nr},${ng},${nb},${mix(0, 0.32, bg)})`
     s.boxShadow = `0 0 ${mix(18, 48, k)}px rgba(${nr},${ng},${nb},${mix(0.55, 0.14, k)}), 0 24px 60px rgba(0,0,0,${0.55 * k})`
     s.overflowY = t >= 1 ? 'auto' : 'hidden'
+    // Controls that can't be seen yet can't be pressed: mid-morph the hidden Back button sweeps under the finger.
+    s.pointerEvents = content < 1 ? 'none' : ''
     if (inner) {
       inner.style.opacity = `${content}`
       inner.style.transform = content < 1 ? `translateY(${(1 - content) * 8}px)` : ''

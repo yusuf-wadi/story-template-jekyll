@@ -271,6 +271,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     dragging = false
     controls.enabled = true
   }
+  // A tap on the canvas is fully handled by the pointer events above. Cancel the touch's compatibility mouse events
+  // and click: a tap that opens a card would otherwise have them land on the card that just grew under the finger.
+  el.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault() }, { passive: false })
   // The OS can take the pointer mid-drag (touch scroll, alt-tab, capture loss): never leave a node pinned.
   el.addEventListener('pointercancel', resetDrag)
   el.addEventListener('lostpointercapture', resetDrag)
