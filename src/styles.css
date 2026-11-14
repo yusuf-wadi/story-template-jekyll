@@ -14,9 +14,6 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .region { fill: #fff; fill-opacity: var(--region-rest); stroke: #fff; stroke-opacity: .2; stroke-width: 1.5; cursor: pointer; outline: none; transition: fill-opacity .2s; }
 .region:hover, .region.is-hover { fill-opacity: var(--region-hover); }
 .region:focus-visible { stroke-opacity: 1; stroke-width: 3; }
-.region.is-complete { stroke-opacity: .7; }
-.region.is-pulse { animation: pulse .9s ease-out; }
-@keyframes pulse { 0% { fill-opacity: .8; } 100% { fill-opacity: var(--region-rest); } }
 .writing-mark { position: absolute; left: 7%; top: 59%; font-size: .7rem; letter-spacing: .08em; color: var(--fg); opacity: .4; text-decoration: none; }
 .writing-mark:hover, .writing-mark:focus-visible { opacity: 1; text-decoration: underline; }
 .region-label { position: absolute; bottom: 64px; left: 0; right: 0; text-align: center; font-size: 1rem; letter-spacing: .1em; opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -24,7 +21,6 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .progress { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; font-size: .75rem; opacity: .5; }
 @media (prefers-reduced-motion: reduce) {
   .region, .region-label { transition: none; }
-  .region.is-pulse { animation: none; }
 }
 .scene-host { position: fixed; inset: 0; }
 .scene-host canvas { display: block; width: 100%; height: 100%; }
@@ -50,3 +46,29 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .node-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .node-label { position: absolute; left: 0; top: 0; margin: 5px 0 0 9px; font: 400 11.5px/1.2 system-ui, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: .01em; color: #c6cbd2; white-space: nowrap; text-shadow: 0 0 3px #000, 0 0 8px #000; transition: opacity .15s; will-change: transform, opacity; }
 @media (prefers-reduced-motion: reduce) { .node-label { transition: none; } }
+/* ---- lobe PCBs: copper traces on green solder mask */
+:root { --copper: #d9a24e; --copper-hi: #ffd88a; --mask: #0f5a3a; --silk: #e9efe6; }
+.pcb { pointer-events: none; }
+.pcb-chip { fill: #0b0d0c; stroke: var(--silk); stroke-opacity: .35; stroke-width: .9; }
+.pcb-pin1 { fill: var(--silk); opacity: .4; }
+.pcb-pin { fill: var(--copper); opacity: .3; transition: opacity .4s; }
+.pcb-pin.is-on { opacity: 1; }
+.pcb-silk { fill: none; stroke: var(--silk); stroke-opacity: .18; stroke-width: .7; }
+.pcb-smd { fill: var(--copper); opacity: .25; }
+.pcb-relief { fill: none; stroke: var(--mask); stroke-opacity: .55; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.pcb-copper { fill: none; stroke: var(--copper); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.pcb-pad { fill: var(--copper); }
+.pcb-via circle:first-child { fill: var(--copper); }
+.pcb-hole { fill: #050605; }
+.pcb-edge-copper { fill: var(--copper); fill-opacity: .25; stroke: var(--copper); stroke-opacity: .5; stroke-width: .8; transition: fill-opacity .6s, fill .6s; }
+.region.is-pcb { fill: var(--mask); fill-opacity: .55; stroke: var(--copper); stroke-opacity: .55; transition: fill-opacity .8s, fill .8s; }
+.region.is-pcb:hover, .region.is-pcb.is-hover { fill-opacity: .8; }
+.pcb.is-pcb .pcb-relief { stroke-opacity: 0; }
+.pcb.is-pcb .pcb-chip { stroke-opacity: .7; }
+.pcb.is-pcb .pcb-silk { stroke-opacity: .45; }
+.pcb.is-pcb .pcb-smd { opacity: .9; }
+.pcb.is-pcb .pcb-edge-copper { fill: var(--copper-hi); fill-opacity: 1; stroke: var(--copper-hi); stroke-opacity: 1; filter: drop-shadow(0 0 3px var(--copper-hi)); }
+.pcb.is-pcb .pcb-copper { stroke: #e8b360; }
+@media (prefers-reduced-motion: reduce) {
+  .pcb-pin, .pcb-edge-copper, .region.is-pcb { transition: none; }
+}

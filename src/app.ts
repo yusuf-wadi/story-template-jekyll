@@ -2,6 +2,7 @@ import type { Content, Layout, SectionId } from './types'
 import type { Progress } from './progress'
 import { parseRoute, toHash, type Route } from './router'
 import { mountProfile } from './profile/profile'
+import { generatePcb, seedFor } from './profile/pcb'
 import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
 import { step } from './tour'
@@ -59,7 +60,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   progress.onChange(() => scene.refresh())
   if (import.meta.env.DEV || location.search.includes('e2e')) {
     const w = window as unknown as { __cm?: object }
-    w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id) })
+    w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id), generatePcb, seedFor })
   }
 
   const render = () => {

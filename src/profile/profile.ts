@@ -1,6 +1,7 @@
 import type { Content, Region, SectionId } from '../types'
 import type { Progress } from '../progress'
 import { HEAD_SVG, REGION_IDS } from './head'
+import { drawTraces, generatePcb, seedFor, type Pcb } from './pcb'
 
 export interface ProfileOpts {
   content: Content
@@ -28,27 +29,63 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
   const itemIds = (id: SectionId) => content.items.filter((i) => i.section === id).map((i) => i.id)
   const isDone = (id: SectionId) => progress.isSectionComplete(itemIds(id))
   const paths = new Map<Region, SVGPathElement>()
-  const lit = new Set<Region>()
+  const groups = new Map<Region, SVGGElement>()
+  const boards = new Map<Region, Pcb>()
+  const itemsOf = new Map<Region, string[]>()
+  // Trace ids already drawn this session: only ids visited since then animate when the profile shows again.
+  const drawn = new Set<string>()
 
-  const setComplete = (region: Region, animate: boolean) => {
+  const pcbFor = (region: Region): Pcb | null => {
+    const cached = boards.get(region)
+    if (cached) return cached
     const p = paths.get(region)
-    if (!p) return
-    p.classList.add('is-complete')
-    if (animate && !lit.has(region)) {
-      p.classList.add('is-pulse')
-      p.addEventListener('animationend', () => p.classList.remove('is-pulse'), { once: true })
-    }
-    lit.add(region)
+    if (!p || el.hidden || !p.isConnected) return null // geometry queries need a rendered path
+    const ids = itemsOf.get(region) ?? []
+    const pcb = generatePcb(p, ids, seedFor(REGION_IDS[region]))
+    if (Object.keys(pcb.traces).length !== ids.length) return null
+    boards.set(region, pcb)
+    return pcb
   }
-  const refresh = (animate: boolean) => {
+
+  /** Wire a region's traces for `visitedIds`; `newlyVisited` ids draw in. Region becomes `.is-pcb` when every item is wired. */
+  const setProgress = async (region: Region, visitedIds: Set<string>, newlyVisited: Set<string>) => {
+    const p = paths.get(region), g = groups.get(region), pcb = pcbFor(region)
+    if (!p || !g || !pcb) return
+    const ids = itemsOf.get(region) ?? []
+    const complete = ids.length > 0 && ids.every((id) => visitedIds.has(id))
+    if (!complete) { p.classList.remove('is-pcb'); g.classList.remove('is-pcb') }
+    await drawTraces(g, pcb, visitedIds, newlyVisited)
+    // the last trace lands, then the mask fills and the edge pads light
+    const still = ids.length > 0 && ids.every((id) => progress.isVisited(id))
+    p.classList.toggle('is-pcb', still)
+    g.classList.toggle('is-pcb', still)
+  }
+
+  const sync = (animate: boolean) => {
     let n = 0
-    for (const s of mapped) if (isDone(s.id)) { n++; setComplete(s.region!, animate) }
+    for (const s of mapped) if (isDone(s.id)) n++
     readout.textContent = `${n} / ${mapped.length} regions wired`
+    if (el.hidden) return
+    for (const s of mapped) {
+      const region = s.region!
+      if (!pcbFor(region)) continue
+      const visited = new Set(itemIds(s.id).filter((id) => progress.isVisited(id)))
+      const fresh = new Set(animate ? [...visited].filter((id) => !drawn.has(id)) : [])
+      for (const id of visited) drawn.add(id)
+      void setProgress(region, visited, fresh)
+    }
   }
 
   for (const s of mapped) {
     const p = el.querySelector<SVGPathElement>(`#${REGION_IDS[s.region!]}`)!
     paths.set(s.region!, p)
+    itemsOf.set(s.region!, itemIds(s.id))
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    g.setAttribute('class', 'pcb')
+    g.setAttribute('aria-hidden', 'true')
+    g.dataset.pcbFor = REGION_IDS[s.region!]
+    p.parentNode!.append(g)
+    groups.set(s.region!, g)
     p.setAttribute('tabindex', '0')
     p.setAttribute('role', 'link')
     p.setAttribute('aria-label', s.title)
@@ -64,13 +101,13 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     })
   }
 
-  progress.onChange(() => refresh(true))
-  refresh(false)
+  progress.onChange(() => sync(true))
   root.append(el)
+  sync(false)
 
   return {
-    show() { el.hidden = false },
+    show() { if (el.hidden) { el.hidden = false; sync(true) } },
     hide() { el.hidden = true },
-    setComplete,
+    setProgress,
   }
 }
