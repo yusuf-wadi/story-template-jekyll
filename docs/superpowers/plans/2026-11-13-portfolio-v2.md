@@ -298,6 +298,26 @@ Old Jekyll files (`_config.yml`, `_experience/`, `_gallery/`, `_includes/`, `_la
 
 ---
 
+### Task 7d: Node expands into a text box (added 11/13 per Yusuf)
+
+**Files:**
+- Modify: `src/reader/reader.ts`, `src/app.ts`, `src/map/sectionScene.ts` (expose node screen pos/color/radius for the open item), `src/styles.css`, `tests/e2e/reader.spec.ts`
+- Create: `tests/e2e/expand.spec.ts`
+
+**Interfaces:**
+- Scene gains `nodeAnchor(id: string): { x: number; y: number; r: number; color: string } | null` (CSS px of the node's projected center and on-screen radius, current sim position).
+- `mountReader(...).open(item, pos, anchor?: { x: number; y: number; r: number; color: string })`: the card element starts as a circle at `anchor` (size 2r, background = node color) and morphs (FLIP / clip-path or transform + border-radius, ~350 ms ease-out) into a rounded card placed beside the node: right of it when there's room, otherwise left; clamped inside the viewport with a 16 px margin; max width 420 px; max height 70 vh with internal scroll. While open, the card follows its node if the node moves (rAF, using `nodeAnchor`). `close()` reverses the morph back into the node. ≤ 600 px: after the morph the card settles as a bottom sheet. Reduced motion: 120 ms fade, no morph, no follow animation.
+- ←/→: close (collapse) then the camera moves and the next node opens with its own anchor. Interrupts (Review Focus 5) still end in the route's state: a new `open` cancels any running morph.
+- Remove the fixed right-side panel layout; keep the same a11y contract (role="dialog", aria-modal="false", aria-labelledby, focus to title, visible Back, "i / n").
+
+- [ ] **Step 1: Failing e2e** `expand.spec.ts`: after clicking a node in `/?e2e#projects`, the card's first animation frame bounding box is centered within 8 px of `__cm.nodeScreenPos(id)` with width ≤ 4·r; after 600 ms the card is ≥ 280 px wide, fully inside the viewport, and its nearest edge is within 48 px of the node's screen position. With `reducedMotion: 'reduce'` the card appears without a morph (no transform transition). Existing reader tests stay green (update any that assumed the right-side panel).
+- [ ] **Step 2:** Run. Expect FAIL.
+- [ ] **Step 3:** Implement.
+- [ ] **Step 4:** All suites + tsc + build pass. Screenshots to the SDD workspace: mid-morph and settled.
+- [ ] **Step 5:** Commit: `feat: nodes expand into text boxes`.
+
+---
+
 ### Task 8: Completion → PCB
 
 **Files:**

@@ -51,13 +51,16 @@ nodes of that section's 3D map. About 1.2 s, eased. Reduced-motion users get a f
   nodes share one hue and hover shows just the item name.
 - Drag empty space to rotate, scroll to zoom. Unvisited nodes are dim; visited nodes are bright.
 
-### 4. Reading a node
-- Clicking a node flies the camera to it and opens a reading panel: title, dates, a short summary, the body,
-  tags, links (GitHub, demo, paper).
-- **← / →** move to the previous / next node along a precomputed nearest-neighbor tour of the section (so
-  "next" is always the closest unseen-in-order neighbor). Swipe on touch.
-- **Back** (button, Esc, or browser back) closes the panel, then leaves the section.
-- Opening a node marks it visited.
+### 4. Reading a node (node expands into a text box — updated 11/13 per Yusuf)
+- Clicking a node makes **the node itself expand into a text box**: the camera eases to center the node, and a
+  card grows out of the node's on-screen position (starting as a circle the node's size and color, morphing
+  into a rounded card over ~350 ms). The card shows title, dates, summary, body, tags and links, and stays
+  anchored to the node (the rest of the graph stays visible and dimmed behind it).
+- **← / →** collapse the card back into its node, the camera moves along the section's nearest-neighbor tour,
+  and the next node expands. Swipe on touch.
+- **Back** (button, Esc, or browser back) collapses the card into its node, then leaves the section.
+- Opening a node marks it visited. Narrow screens (≤ 600 px): the card grows from the node and then settles
+  as a bottom sheet. Reduced motion: a quick fade instead of the morph.
 
 ### 5. Completion → PCB
 - When every node in a section is visited, the section is complete. On returning to the profile, that region
