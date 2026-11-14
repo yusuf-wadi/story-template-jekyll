@@ -329,7 +329,7 @@
       "title": "Toyota: home energy management (HEMS)",
       "dates": "Mar 2026 – present",
       "summary": "I build Go microservices for Toyota's home EV-charging platform.",
-      "body": "HEMS is Toyota's home EV-charging platform. I built Go microservices for it, including an OCPP 2.1 WebSocket gateway with mTLS (Security Profile 3) and Kafka message streaming, plus boot and event services for charger telemetry and V2H backup-power events.\n\nI also redesigned firmware distribution from an always-on EKS service to event-driven AWS Lambda and Step Functions, so a twice-a-year workload stops paying for idle capacity. I built the signing workflow with mTLS OAuth, async callbacks and LocalStack-based testing.",
+      "body": "HEMS is Toyota's home EV-charging platform. I built Go microservices for it, including an OCPP 2.1 WebSocket gateway with mTLS (Security Profile 3) and Kafka message streaming, plus boot and event services for charger telemetry and V2H backup-power events.\n\nI also redesigned firmware distribution from an always-on EKS service to event-driven AWS Lambda and Step Functions, so a twice-a-year workload does not need an always-on service. I built the signing workflow with mTLS OAuth, async callbacks and LocalStack-based testing.",
       "tags": [
         "Go",
         "OCPP",
@@ -588,7 +588,7 @@
       "title": "Skills",
       "dates": "",
       "summary": "The languages and tools I use most, grouped by how much I have shipped with them.",
-      "body": "**Daily and in production:** Go and Python, on AWS (EKS, Lambda, Kinesis, Step Functions, S3, API Gateway), with MongoDB, Docker, Kubernetes, Datadog and REST/OpenAPI services.\n\n**Proficient:** TypeScript and JavaScript, Elasticsearch and OpenSearch, Kinesis, and the Python web and visualization stack (FastAPI, Flask, Streamlit, Plotly).\n\n**Machine learning:** PyTorch, scikit-learn, pandas and NumPy, LightGBM and XGBoost, plus LLM work with fine-tuning, RAG and local models through Ollama. Anomaly detection, autoencoders and time-series modeling are the areas I know best.\n\n**Familiar or growing:** Rust, Swift, Kafka, Spark, Unity and Bevy. I use agentic coding tools daily.",
+      "body": "**Daily and in production:** Go and Python, on AWS (EKS, Lambda, Step Functions, S3, API Gateway), with MongoDB, Docker, Kubernetes, Datadog and REST/OpenAPI services.\n\n**Proficient:** TypeScript and JavaScript, Elasticsearch and OpenSearch, Kinesis, and the Python web and visualization stack (FastAPI, Flask, Streamlit, Plotly).\n\n**Machine learning:** PyTorch, scikit-learn, pandas and NumPy, LightGBM and XGBoost, plus LLM work with fine-tuning, RAG and local models through Ollama. Anomaly detection, autoencoders and time-series modeling are the areas I know best.\n\n**Familiar or growing:** Rust, Swift, Kafka, Spark, Unity and Bevy. I use agentic coding tools daily.",
       "tags": [
         "Go",
         "Python",
