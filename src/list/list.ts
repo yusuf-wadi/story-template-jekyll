@@ -1,5 +1,6 @@
 import type { Content, Item, SectionId } from '../types'
 import { esc, renderBody, safeHref } from '../reader/card'
+import { buildTrace, lengthAtY, loopFraction, type Trace } from './trace'
 
 const MONTH = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(?![a-z])/i
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
@@ -74,8 +75,8 @@ export function renderList(root: HTMLElement, content: Content, opts: { backToBr
   const sections = shown.map(({ s, items }) => {
     const list = byTime(items).map(article).join('')
     return `<section class="list-sec" data-section="${s.id}" aria-labelledby="sec-${s.id}">
-      <h2 id="sec-${s.id}" tabindex="-1">${esc(s.title)}<span class="list-count" aria-hidden="true">${items.length}</span></h2>
-      <div class="tl"><span class="tl-fill" aria-hidden="true"></span>${list}</div>
+      <h2 id="sec-${s.id}" tabindex="-1" data-lit="false"><span class="list-h-title">${esc(s.title)}</span><span class="list-count" aria-hidden="true">${items.length}</span></h2>
+      <div class="tl">${list}</div>
     </section>`
   }).join('')
   const bar = shown.map(({ s }) => `<a href="#sec-${s.id}" data-jump="${s.id}">${esc(s.title)}</a>`).join('')
@@ -95,7 +96,10 @@ export function renderList(root: HTMLElement, content: Content, opts: { backToBr
         </p>
       </header>
       <nav class="list-bar" aria-label="Sections"><div class="list-bar-inner list-wrap">${bar}</div></nav>
-      <div class="list-wrap">${sections}</div>
+      <div class="list-wrap"><div class="list-traces">
+        <svg class="trace" aria-hidden="true" focusable="false"><path class="trace-base"/><path class="trace-lit"/><g class="trace-loops"></g><rect class="trace-end" width="10" height="10" rx="2"/></svg>
+        ${sections}
+      </div></div>
     </main>`
 
   // Copy email, with a select-the-text fallback when the clipboard is unavailable.
@@ -126,34 +130,81 @@ export function renderList(root: HTMLElement, content: Content, opts: { backToBr
     })
   })
 
-  // Each section's trace charges down as you scroll: an item's pad lights once it comes into view (and stays lit),
-  // lighting every pad above it in that section; the copper fill follows the lowest lit pad.
-  const tls = [...root.querySelectorAll<HTMLElement>('.tl')]
-  const fill = () => {
-    for (const tl of tls) {
-      const lit = tl.querySelectorAll<HTMLElement>('.li[data-lit="true"] .tl-pad')
-      const f = tl.querySelector<HTMLElement>('.tl-fill')!
-      const pad = lit[lit.length - 1]
-      if (!pad) { f.style.height = '0px'; continue }
-      const r = pad.getBoundingClientRect()
-      f.style.height = `${Math.max(0, r.top + r.height / 2 - tl.getBoundingClientRect().top - f.offsetTop)}px`
-    }
-  }
-  const light = (li: HTMLElement) => {
-    const tl = li.closest('.tl')!
-    const all = [...tl.querySelectorAll<HTMLElement>('.li')]
-    for (const x of all.slice(0, all.indexOf(li) + 1)) x.dataset.lit = 'true'
-  }
+  // One continuous trace: down the spine, around each title, through every pad. Its lit length follows the
+  // deepest scroll reached (a line 80% down the viewport), so it charges as you read and stays charged.
+  const box = root.querySelector<HTMLElement>('.list-traces')!
+  const svg = box.querySelector<SVGSVGElement>('svg.trace')!
+  const base = svg.querySelector<SVGPathElement>('.trace-base')!
+  const lit = svg.querySelector<SVGPathElement>('.trace-lit')!
+  const end = svg.querySelector<SVGRectElement>('.trace-end')!
+  const loopsG = svg.querySelector<SVGGElement>('.trace-loops')!
+  const secEls = [...box.querySelectorAll<HTMLElement>('.list-sec')]
   const atBottom = () => root.scrollTop + root.clientHeight >= root.scrollHeight - 4
-  const lightAll = () => root.querySelectorAll<HTMLElement>('.li').forEach((x) => { x.dataset.lit = 'true' })
-  if (typeof IntersectionObserver === 'function') {
-    const lio = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { light(e.target as HTMLElement); lio.unobserve(e.target) }
-      fill()
-    }, { root, rootMargin: '0px 0px -10% 0px' })
-    root.querySelectorAll('.li').forEach((x) => lio.observe(x))
-  } else lightAll()
-  window.addEventListener('resize', fill, { passive: true })
+  let trace: Trace | null = null
+  let reached = -Infinity // deepest line reached, in container px (Infinity once the bottom is hit)
+  const layout = () => {
+    const c = box.getBoundingClientRect()
+    if (!c.height) return // hidden: measure once shown
+    const firstPad = box.querySelector<HTMLElement>('.tl-pad')
+    if (!firstPad) return
+    const pr = firstPad.getBoundingClientRect()
+    const x = pr.left + pr.width / 2 - c.left
+    trace = buildTrace(x, secEls.map((sec) => {
+      const t = sec.querySelector('.list-h-title')!.getBoundingClientRect()
+      return {
+        head: { top: t.top - c.top, bottom: t.bottom - c.top, left: t.left - c.left, right: t.right - c.left },
+        pads: [...sec.querySelectorAll('.tl-pad')].map((p) => { const r = p.getBoundingClientRect(); return r.top + r.height / 2 - c.top }),
+      }
+    }))
+    svg.setAttribute('viewBox', `0 0 ${c.width} ${c.height}`)
+    svg.setAttribute('width', String(c.width))
+    svg.setAttribute('height', String(c.height))
+    base.setAttribute('d', trace.d)
+    lit.setAttribute('d', trace.d)
+    lit.style.strokeDasharray = `${trace.total} ${trace.total}`
+    const last = trace.points[trace.points.length - 1]
+    if (last) { end.setAttribute('x', String(last[0] - 5)); end.setAttribute('y', String(last[1])) }
+    // Each title's ring: a dim arm, its lit copy, and the entry via drawn over both.
+    loopsG.innerHTML = trace.loops.map((l) => `<path class="trace-base" d="${l.d}"/><path class="trace-lit loop-lit" d="${l.d}" style="stroke-dasharray:${l.length} ${l.length};stroke-dashoffset:${l.length}"/><circle class="trace-via" cx="${l.via[0]}" cy="${l.via[1]}" r="3.2"/>`).join('')
+    paintTrace()
+  }
+  const paintTrace = () => {
+    if (!trace) return
+    const len = reached === Infinity ? trace.total : Math.min(trace.total, lengthAtY(trace, reached))
+    lit.style.strokeDashoffset = String(trace.total - len)
+    svg.dataset.litLength = len.toFixed(1)
+    svg.dataset.total = trace.total.toFixed(1)
+    const on = (at: number) => len >= at - 0.5
+    secEls.forEach((sec, i) => {
+      sec.querySelector('h2')!.dataset.lit = String(on(trace!.frameEnds[i]!))
+      sec.querySelectorAll<HTMLElement>('.li').forEach((li, j) => { li.dataset.lit = String(on(trace!.padLens[i]![j]!)) })
+    })
+    end.classList.toggle('is-lit', on(trace.total))
+    const depth = reached === Infinity ? Infinity : reached
+    const arms = loopsG.querySelectorAll<SVGPathElement>('.loop-lit')
+    const vias = loopsG.querySelectorAll<SVGCircleElement>('.trace-via')
+    trace.loops.forEach((l, i) => {
+      arms[i]!.style.strokeDashoffset = String(l.length * (1 - loopFraction(l, depth)))
+      vias[i]!.classList.toggle('is-lit', depth >= l.via[1])
+    })
+  }
+  const advance = () => {
+    const c = box.getBoundingClientRect()
+    if (!c.height) return
+    const line = atBottom() && root.scrollTop > 0 ? Infinity : root.getBoundingClientRect().top + root.clientHeight * 0.8 - c.top
+    if (line > reached) { reached = line; paintTrace() }
+  }
+  let frame = 0
+  root.addEventListener('scroll', () => {
+    if (frame) return
+    frame = requestAnimationFrame(() => { frame = 0; advance() })
+  }, { passive: true })
+  // Expand/collapse, resize, fonts and being un-hidden all change the geometry: re-route the path.
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => { layout(); advance() }).observe(box)
+  else window.addEventListener('resize', () => { layout(); advance() }, { passive: true })
+  layout()
+  advance()
+  const fill = () => { layout(); advance() }
 
   // Section bar: jump without touching the hash router; highlight whichever section is under the bar.
   const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -198,14 +249,8 @@ export function renderList(root: HTMLElement, content: Content, opts: { backToBr
     const io = new IntersectionObserver(pick, { root, rootMargin: '-10% 0px -75% 0px' })
     secs.forEach((s) => io.observe(s))
   }
-  // The last sections may never reach the band, so reaching the bottom also lights every node and picks the last.
-  const onBottom = () => {
-    if (!atBottom() || root.scrollTop <= 0) return
-    lightAll()
-    fill()
-    pick()
-  }
-  root.addEventListener('scroll', onBottom, { passive: true })
+  // The last sections may never reach the band, so reaching the bottom also picks the last.
+  root.addEventListener('scroll', () => { if (atBottom() && root.scrollTop > 0) pick() }, { passive: true })
   // A jump keeps its own target as current once it lands; the next scroll re-reads.
   root.addEventListener('scrollend', () => { lockUntil = 0 })
 }

@@ -161,10 +161,10 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 
 /* sections */
 .list-sec { padding-top: 34px; scroll-margin-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
-.list-main h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font: 500 .74rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.72); outline: none; }
-.list-main h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,.16), rgba(255,255,255,0)); }
-.list-count { order: 2; opacity: .45; letter-spacing: .05em; }
-.list-main h2::after { order: 1; }
+.list-main h2 { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; margin: 0 0 24px; padding-left: 20px; font: 500 .74rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.72); outline: none; }
+.list-h-title { transition: color .3s; }
+.list-main h2[data-lit="true"] .list-h-title { color: var(--trace-hi); }
+.list-count { margin-left: auto; opacity: .45; letter-spacing: .05em; }
 
 /* item cards: near-transparent glass with a thin light rim */
 .li { position: relative; margin: 0 0 10px; border-radius: 14px; border: 1px solid var(--rim); border-top-color: rgba(255,255,255,.17); background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(207,228,255,.008)); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); transition: border-color .2s, background .2s; }
@@ -195,12 +195,18 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .list-main .li-links a { text-decoration: none; padding: 4px 11px; border-radius: 999px; border: 1px solid rgb(var(--trace-rgb) / .35); color: #dbe9f5; }
 .list-main .li-links a:hover { border-color: var(--trace-hi); color: #fff; }
 
-/* Every section is a copper trace with one pad per item. Pads light as their items scroll into view; the fill
-   charges down to the lowest lit pad. Nothing here reflects 3D progress. */
+/* One continuous copper trace (an SVG path, routed in list.ts) runs down the spine, frames each section title
+   and passes through one pad per item. Its lit length follows scroll; nothing here reflects 3D progress. */
+.list-traces { position: relative; }
+.trace { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.trace path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trace-base { stroke: rgba(255,255,255,.1); }
+.trace-lit { stroke: var(--trace); filter: drop-shadow(0 0 2.5px rgb(var(--trace-rgb) / .7)); transition: stroke-dashoffset .35s ease-out; }
+.trace-via { fill: #000; stroke: rgba(255,255,255,.22); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+.trace-via.is-lit { fill: var(--trace-hi); stroke: var(--trace); filter: drop-shadow(0 0 3px rgb(var(--trace-rgb) / .8)); }
+.trace-end { fill: none; stroke: rgba(255,255,255,.14); stroke-width: 1.5; transition: stroke .3s; }
+.trace-end.is-lit { stroke: var(--trace-hi); }
 .tl { position: relative; padding-left: 30px; }
-.tl::before { content: ""; position: absolute; left: 7px; top: 22px; bottom: 18px; width: 2px; border-radius: 2px; background: rgba(255,255,255,.1); }
-.tl::after { content: ""; position: absolute; left: 3px; bottom: 8px; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid rgba(255,255,255,.14); }
-.tl-fill { position: absolute; left: 7px; top: 22px; width: 2px; height: 0; border-radius: 2px; background: linear-gradient(180deg, var(--trace-lit), var(--trace)); box-shadow: 0 0 5px rgb(var(--trace-rgb) / .5); transition: height .5s ease-out; }
 .tl-pad { position: absolute; z-index: 1; left: -28px; top: 15px; width: 14px; height: 14px; border-radius: 50%; background: #000; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.3); transition: background .4s, box-shadow .4s; }
 .tl-pad::after { content: ""; position: absolute; left: 14px; top: 6px; width: 14px; height: 2px; background: rgba(255,255,255,.12); transition: background .4s; }
 .li[data-lit="true"] .tl-pad { background: radial-gradient(circle, #000 0 2.4px, var(--trace) 2.9px); box-shadow: 0 0 0 2px #000, 0 0 7px rgb(var(--trace-rgb) / .6); }
@@ -216,11 +222,10 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
   .tl { padding-left: 24px; }
   .tl-pad { left: -23px; }
   .tl-pad::after { width: 9px; }
-  .tl::before, .tl-fill { left: 6px; }
-  .tl::after { left: 2px; }
+  .list-main h2 { padding-left: 19px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .list-main .list-bar a, .li, .li-chev, .li-dates, .tl-pad, .tl-pad::after, .tl-fill { transition: none; }
+  .list-main .list-bar a, .li, .li-chev, .li-dates, .tl-pad, .tl-pad::after, .trace-lit, .trace-end, .trace-via, .list-h-title { transition: none; }
   .li.is-open .li-body { animation: none; }
 }
 .lit-rim { fill: none; stroke-width: 1.5; opacity: 0; pointer-events: none; transition: opacity .5s; }

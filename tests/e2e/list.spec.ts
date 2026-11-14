@@ -125,28 +125,56 @@ test('the list has no tie to 3D progress: expanding earns none, and earned progr
   expect(await page.evaluate(() => localStorage.getItem('cm-progress-v1'))).toBe(JSON.stringify([far]))
 })
 
-test('nodes light as items scroll into view, stay lit, and the trace charges to the lowest lit pad', async ({ page }) => {
+test('one trace charges with scroll: monotonic, title frames after the previous last pad, last pads light, bottom is full', async ({ page }) => {
   await page.goto('/#list')
+  const view = page.locator('.list-view')
+  const state = () => page.evaluate(() => {
+    const svg = document.querySelector<SVGSVGElement>('svg.trace')!
+    const secs = [...document.querySelectorAll<HTMLElement>('.list-sec')].map((s) => ({
+      head: s.querySelector('h2')!.dataset.lit === 'true',
+      lastPad: [...s.querySelectorAll<HTMLElement>('.li')].at(-1)!.dataset.lit === 'true',
+    }))
+    return { len: Number(svg.dataset.litLength), total: Number(svg.dataset.total), secs }
+  })
+  const max = await view.evaluate((el) => el.scrollHeight - el.clientHeight)
+  let prev = -1
+  const lastPadsSeen = new Set<number>()
+  for (let y = 0; y <= max; y += 120) {
+    await view.evaluate((el, t) => { el.scrollTop = t }, y)
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+    const s = await state()
+    expect(s.len).toBeGreaterThanOrEqual(prev)
+    prev = s.len
+    s.secs.forEach((x, i) => {
+      if (x.lastPad) lastPadsSeen.add(i)
+      if (i > 0 && x.head) expect(s.secs[i - 1]!.lastPad, `section ${i} title lit before section ${i - 1}'s last pad`).toBe(true)
+    })
+  }
+  expect(prev).toBeGreaterThan(0)
+  // every section but the last has its last pad lit by scrolling alone (the last needs the bottom)
+  expect(lastPadsSeen.size).toBeGreaterThanOrEqual(shownSections.length - 1)
+  await view.evaluate((el) => { el.scrollTop = el.scrollHeight })
+  await expect.poll(async () => { const s = await state(); return s.len === s.total && s.secs.every((x) => x.head && x.lastPad) }).toBe(true)
+  await expect(page.locator('article[data-lit="false"]')).toHaveCount(0)
+  // every title ring has been run all the way round, and every entry via is lit
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll<SVGPathElement>('.loop-lit')]
+    .every((p) => Number(p.style.strokeDashoffset) < 0.5))).toBe(true)
+  await expect(page.locator('.trace-via:not(.is-lit)')).toHaveCount(0)
+  await expect(page.locator('.trace-via')).toHaveCount(shownSections.length)
+  // stays charged after scrolling back up
+  await view.evaluate((el) => { el.scrollTop = 0 })
+  await page.waitForTimeout(100)
+  await expect(page.locator('article[data-lit="false"]')).toHaveCount(0)
+})
+
+test('the trace re-routes when an item expands and at phone width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#list')
+  const total = () => page.evaluate(() => Number(document.querySelector<SVGSVGElement>('svg.trace')!.dataset.total))
+  const before = await total()
   const first = byTime(items.filter((i) => i.section === 'projects'))[0]!.id
-  await expect(art(page, first)).toHaveAttribute('data-lit', 'true')
-  const research = items.filter((i) => i.section === 'research')
-  const target = research[research.length - 1]!.id
-  await expect(art(page, target)).toHaveAttribute('data-lit', 'false')
-  await art(page, target).evaluate((el: HTMLElement) => el.scrollIntoView({ block: 'center' }))
-  await expect(art(page, target)).toHaveAttribute('data-lit', 'true')
-  // charging lights everything above it in its section
-  for (const i of research) await expect(art(page, i.id)).toHaveAttribute('data-lit', 'true')
-  // the copper fill ends at the lowest lit pad's centre
-  const sec = page.locator('section[data-section="research"]')
-  await expect.poll(() => sec.evaluate((s) => {
-    const pads = s.querySelectorAll('.li[data-lit="true"] .tl-pad')
-    const p = pads[pads.length - 1]!.getBoundingClientRect()
-    const f = s.querySelector('.tl-fill')!.getBoundingClientRect()
-    return Math.abs(f.bottom - (p.top + p.height / 2))
-  })).toBeLessThan(2)
-  // stays lit after scrolling away
-  await page.locator('.list-view').evaluate((el) => { el.scrollTop = 0 })
-  await expect(art(page, target)).toHaveAttribute('data-lit', 'true')
+  await toggle(page, first).click()
+  await expect.poll(total).toBeGreaterThan(before + 50)
 })
 
 test('every section is a trace with one pad per item, ordered newest first', async ({ page }) => {
