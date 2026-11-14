@@ -2,7 +2,7 @@ import type { Content, Layout, SectionId } from './types'
 import type { Progress } from './progress'
 import { parseRoute, toHash, type Route } from './router'
 import { mountProfile, type PreparedDive } from './profile/profile'
-import { generatePcb, seedFor } from './profile/pcb'
+import { fitPcb, generatePcb, seedFor } from './profile/pcb'
 import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
 import { step } from './tour'
@@ -84,7 +84,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   })
   progress.onChange(() => scene.refresh())
 
-  // Easter egg: once every lobe is a full PCB the circuit closes. Plays animated once; later loads show it settled.
+  // Easter egg: once every lobe is complete (from progress) and its traces have landed, the circuit closes. Plays animated once; later loads show it settled.
   const regionItemIds = content.sections.filter((s) => s.region)
     .map((s) => content.items.filter((i) => i.section === s.id).map((i) => i.id))
   const nextItems = content.items.filter((i) => i.section === 'next')
@@ -108,7 +108,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   })
   if (import.meta.env.DEV || location.search.includes('e2e')) {
     const w = window as unknown as { __cm?: object }
-    w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id), generatePcb, seedFor })
+    w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id), generatePcb, fitPcb, seedFor })
   }
 
   const render = () => {

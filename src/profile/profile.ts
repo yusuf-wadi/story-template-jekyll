@@ -2,7 +2,7 @@ import type { Content, Region, SectionId } from '../types'
 import type { Progress } from '../progress'
 import { HEAD_SVG, REGION_IDS } from './head'
 import { mountLight } from './light'
-import { drawTraces, generatePcb, seedFor, type Pcb } from './pcb'
+import { drawTraces, fitPcb, seedFor, type Pcb } from './pcb'
 import { DIVE_MS, EASE_CSS, FADE_MS, PARTICLES, diveZoom, type DiveFrom } from '../dive'
 
 /** A dive measured while the profile was still on screen: the outline, and a frozen copy of the profile to push into. */
@@ -77,8 +77,8 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     const p = paths.get(region)
     if (!p || el.hidden || !p.isConnected) return null // geometry queries need a rendered path
     const ids = itemsOf.get(region) ?? []
-    const pcb = generatePcb(p, ids, seedFor(REGION_IDS[region]))
-    if (Object.keys(pcb.traces).length !== ids.length) return null
+    // Degrades (tighter grid, then a partial board) rather than failing, so content growth never strands a lobe.
+    const pcb = fitPcb(p, ids, seedFor(REGION_IDS[region]))
     boards.set(region, pcb)
     return pcb
   }
@@ -194,11 +194,11 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     /** The head `<g>`: source coordinates shared by region outlines, PCBs and edge pads. */
     head,
     isHidden: () => el.hidden,
-    /** Resolves once pending trace animations have landed: true if every mapped region is a full PCB. */
+    /** Resolves once pending trace animations have landed: true if every mapped region is complete (from progress). */
     async whenWired(): Promise<boolean> {
       let p: Promise<unknown>
       do { p = pending; await p } while (p !== pending)
-      return !el.hidden && mapped.every((s) => paths.get(s.region!)?.classList.contains('is-pcb'))
+      return !el.hidden && mapped.every((s) => isDone(s.id))
     },
     show() { if (el.hidden) { el.hidden = false; sync(true) } },
     hide() {

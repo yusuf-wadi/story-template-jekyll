@@ -129,3 +129,39 @@ test.describe('reduced motion', () => {
     expect(n).toBe(0)
   })
 })
+
+test('capacity: every lobe fully routes its current item count + 2 (see README "Per-lobe item limits")', async ({ page }) => {
+  await page.goto('/?e2e')
+  await page.waitForFunction(() => (window as any).__cm?.fitPcb)
+  for (const [section, region] of Object.entries(REGION_OF)) {
+    const want = idsOf(section).length + 2
+    const got = await page.evaluate(({ rid, want }) => {
+      const cm = (window as any).__cm
+      const path = document.getElementById(rid) as unknown as SVGPathElement
+      const ids = Array.from({ length: want }, (_, i) => `extra-${i}`)
+      return Object.keys(cm.fitPcb(path, ids, cm.seedFor(rid)).traces).length
+    }, { rid: `region-${region}`, want })
+    expect(got, `${region} (${section}) routed only ${got} of ${want} traces at current count + 2: ` +
+      'the lobe is near its PCB capacity; see README "Per-lobe item limits"').toBe(want)
+  }
+})
+
+test('over capacity: a lobe with far too many items still wires from progress and the egg still opens', async ({ page }) => {
+  // Serve content with 40 extra Craft items (far past the cerebellum's routing capacity).
+  const extra = Array.from({ length: 40 }, (_, i) => ({
+    id: `extra-craft-${i}`, section: 'craft', title: `Extra ${i}`, dates: '', summary: 's', body: 'b', tags: [], links: [], status: null,
+  }))
+  const big = { ...content, items: [...content.items, ...extra] }
+  await page.route(/\/content\/content\.json/, (route) =>
+    route.fulfill({ contentType: 'text/javascript', body: `export default ${JSON.stringify(big)}` }))
+  const all = big.items.filter((i: { section: string }) => i.section !== 'next').map((i: { id: string }) => i.id)
+  await seed(page, all)
+  await page.addInitScript(() => localStorage.setItem('cm-egg-seen-v1', '1'))
+  await page.goto('/')
+  await expect(page.locator('[data-progress]')).toHaveText('5 / 5 regions wired')
+  await expect(page.locator('#region-cerebellum')).toHaveClass(/is-pcb/)
+  const traces = await traceCount(page, 'cerebellum').count()
+  expect(traces).toBeGreaterThan(0)
+  expect(traces).toBeLessThan(idsOf('craft').length + 40)
+  await expect(page.locator('[data-egg-eye]')).toBeVisible()
+})

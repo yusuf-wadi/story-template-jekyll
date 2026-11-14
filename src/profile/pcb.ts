@@ -19,8 +19,8 @@ export interface Pcb {
   pitch: number
 }
 
-const P = 6 // grid pitch (source units)
-const MARGIN = 7 // keep copper this far inside the outline
+const PITCH = 6 // grid pitch (source units)
+const MARGIN_DEFAULT = 7 // keep copper this far inside the outline
 const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]] as const
 const NEIGHBOR_DIST = 50
 /** Routing cost of a 45° / 90° turn (in grid steps): high enough that traces run long and straight, no short jogs. */
@@ -44,12 +44,24 @@ function rng(seed: number) {
   }
 }
 
-const empty = (): Pcb => ({
+const emptyBase = (): Pcb => ({
   traces: {}, pads: [], edgePads: [], starts: {}, pins: {}, vias: {},
-  chip: { x: 0, y: 0, w: 0, h: 0, pin1: { x: 0, y: 0 } }, parts: [], pitch: P,
+  chip: { x: 0, y: 0, w: 0, h: 0, pin1: { x: 0, y: 0 } }, parts: [], pitch: PITCH,
 })
 
-export function generatePcb(regionPath: SVGPathElement, itemIds: string[], seed: number): Pcb {
+export interface PcbOpts {
+  /** Grid pitch in source units (default 6). */
+  pitch?: number
+  /** Keep copper this far inside the outline (default 7). */
+  margin?: number
+  /** Place the unpopulated decor footprints (default true). */
+  decor?: boolean
+}
+
+export function generatePcb(regionPath: SVGPathElement, itemIds: string[], seed: number, opts: PcbOpts = {}): Pcb {
+  const P = opts.pitch ?? PITCH
+  const MARGIN = opts.margin ?? MARGIN_DEFAULT
+  const empty = (): Pcb => ({ ...emptyBase(), pitch: P })
   const box = regionPath.getBBox()
   if (!box.width || !box.height) return empty()
   const gx0 = Math.floor(box.x / P) * P, gy0 = Math.floor(box.y / P) * P
@@ -339,7 +351,7 @@ export function generatePcb(regionPath: SVGPathElement, itemIds: string[], seed:
 
   // ---- decor: a few unpopulated two-pad footprints in free, interior board space
   const free = (i: number, j: number) => isSafe(i, j) && !boundary[idx(i, j)] && !occupied[idx(i, j)]
-  const wantParts = Math.max(1, Math.round(n / 2))
+  const wantParts = opts.decor === false ? 0 : Math.max(1, Math.round(n / 2))
   const spots: [number, number, boolean][] = []
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const horizontal = rand() < 0.5
@@ -353,6 +365,28 @@ export function generatePcb(regionPath: SVGPathElement, itemIds: string[], seed:
     for (let r = spots.length - 1; r >= 0; r--) if (Math.max(Math.abs(spots[r][0] - i), Math.abs(spots[r][1] - j)) < 4) spots.splice(r, 1)
   }
   return out
+}
+
+/**
+ * Graceful degradation for content growth: the default grid first, then tighter pitch and margins (decor
+ * dropped on the dense grids), and if even the densest grid can't route every item, as many items as fit
+ * (the rest keep no trace; completion still comes from progress). Never returns null.
+ */
+export const PCB_FALLBACKS: readonly PcbOpts[] = [
+  {}, { pitch: 5, margin: 6 }, { pitch: 4, margin: 5, decor: false }, { pitch: 4, margin: 4, decor: false }, { pitch: 3, margin: 4, decor: false },
+]
+export function fitPcb(regionPath: SVGPathElement, itemIds: string[], seed: number): Pcb {
+  const full = (p: Pcb, n: number) => Object.keys(p.traces).length === n
+  for (const o of PCB_FALLBACKS) {
+    const p = generatePcb(regionPath, itemIds, seed, o)
+    if (full(p, itemIds.length)) return p
+  }
+  const densest = PCB_FALLBACKS[PCB_FALLBACKS.length - 1]
+  for (let m = itemIds.length - 1; m > 0; m--) {
+    const p = generatePcb(regionPath, itemIds.slice(0, m), seed, densest)
+    if (full(p, m)) return p
+  }
+  return generatePcb(regionPath, [], seed, densest)
 }
 
 // ---------------------------------------------------------------- drawing
