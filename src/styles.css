@@ -165,3 +165,9 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .dive-ghost { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; overflow: hidden; pointer-events: none; will-change: transform, opacity; }
 .dive-ghost, .dive-ghost * { animation: none !important; transition: none !important; }
 .profile.is-diving { position: fixed; inset: 0; z-index: 3; will-change: transform, opacity; }
+/* ---- phones: comfortable tap targets (>= 44px) for the Writing bubble and the eye */
+@media (max-width: 600px) {
+  .writing-mark { width: max(17%, 92px); }
+  .egg-eye-btn { width: max(52px, var(--eye-w, 46px)); }
+  .section-back { top: 14px; left: 14px; padding: 10px 16px 10px 13px; }
+}

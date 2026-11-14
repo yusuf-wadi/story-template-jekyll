@@ -29,11 +29,16 @@ export interface SectionScene {
 const CLICK_PX = 5
 /** Min screen-space pick radius so small nodes stay easy to hover. */
 const PICK_PX = 14
+/** Fingers are blunter: a 44px-wide target around every node. */
+const TOUCH_PICK_PX = 22
 /** Sim sleeps once kinetic energy per node drops below this (and nothing is pinned). */
 const SLEEP_E = 1e-5
 /** The dive starts (in) / ends (out) this much farther from the target: the camera pushes in as the nodes form. */
 const DOLLY = 1.5
 const SPARK = new THREE.Color(0x6fd8ff)
+/** Phones render at most 1.5 device px per CSS px: fill-rate, battery and heat over the last bit of crispness. */
+const PHONE = '(max-width: 600px)'
+const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.matchMedia?.(PHONE).matches ? 1.5 : 2)
 
 function dotTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
@@ -65,7 +70,7 @@ type Dive = {
 
 export function createSectionScene(host: HTMLElement, isVisited: (id: string) => boolean = () => false): SectionScene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  renderer.setPixelRatio(pixelRatio())
   host.append(renderer.domElement)
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200)
@@ -103,6 +108,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   let down: { x: number; y: number; id: string | null; plane: THREE.Plane | null } | null = null
   let dragging = false
   let dive: Dive | null = null
+  /** Touch has no hover: the first tap on a node arms it (label shown), a second tap on it opens. */
+  let armed: string | null = null
+  let touching = false
   /** e2e/screenshots only: pin the dive clock at this progress. */
   let heldT: number | null = null
   let dots: THREE.CanvasTexture | null = null
@@ -115,6 +123,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   const resize = () => {
     const w = host.clientWidth || window.innerWidth
     const h = host.clientHeight || window.innerHeight
+    if (renderer.getPixelRatio() !== pixelRatio()) renderer.setPixelRatio(pixelRatio())
     renderer.setSize(w, h)
     camera.aspect = w / h
     applyShift()
@@ -171,7 +180,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       const s = screenPos(id)
       if (!s) continue
       const dist = Math.hypot(s.x - x, s.y - y)
-      const reach = Math.max(PICK_PX, (m.scale.x * pxPerUnit) / camera.position.distanceTo(m.position) + 4)
+      const reach = Math.max(touching ? TOUCH_PICK_PX : PICK_PX, (m.scale.x * pxPerUnit) / camera.position.distanceTo(m.position) + 4)
       if (dist <= reach && dist < bestD) { best = id; bestD = dist }
     }
     return best
@@ -200,6 +209,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   const onDown = (e: PointerEvent) => {
     if (e.target !== el) return
     if (dive) { finishDive(); return } // a click mid-dive skips to the end
+    touching = e.pointerType === 'touch'
     interacted = true
     const id = nodeAt(e.clientX, e.clientY)
     let plane: THREE.Plane | null = null
@@ -233,8 +243,8 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   // The OS can take the pointer mid-drag (touch scroll, alt-tab, capture loss): never leave a node pinned.
   el.addEventListener('pointercancel', resetDrag)
   el.addEventListener('lostpointercapture', resetDrag)
-  el.addEventListener('pointerleave', () => {
-    if (down?.id) return
+  el.addEventListener('pointerleave', (e) => {
+    if (down?.id || e.pointerType === 'touch') return // a lifted finger "leaves"; keep the tapped label up
     pointer = null; fields?.setHighlight(null); setHoverNode(null); emitHover(null)
   })
   el.addEventListener('pointerup', (e) => {
@@ -249,6 +259,12 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     pointer = { x: e.clientX, y: e.clientY }
     const id = pick()
     if (moved > CLICK_PX || wasDrag) return
+    if (e.pointerType === 'touch') {
+      if (id && id === armed) { armed = null; clickFn(id); return }
+      armed = id
+      if (!id) { fields?.setHighlight(null); setHoverNode(null); emitHover(null) }
+      return
+    }
     if (id) clickFn(id)
   })
 
@@ -258,6 +274,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     sim = null
     hoverId = null
     selected = null
+    armed = null
     labels.clear()
   }
 
@@ -424,7 +441,11 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       scene.add(fields.group)
       host.hidden = false
       controls.target.set(0, 0, 0)
-      camera.position.set(0, 4, 20)
+      // Portrait phones see a narrow slice horizontally: back the camera off so the whole graph fits.
+      const w = host.clientWidth || window.innerWidth, h = host.clientHeight || window.innerHeight
+      const fit = Math.min(1.8, Math.max(1, (1.1 * h) / w))
+      camera.position.set(0, 4 * fit, 20 * fit)
+      labels.setDepthScale(fit)
       interacted = false
       shift = { x: 0, y: 0 }
       resize()
@@ -439,6 +460,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       setHoverNode(null)
       emitHover(null)
       resetDrag()
+      armed = null
       selected = null
       view?.setFocus(null)
       if (from && !reduced && !host.hidden && sim) { focusTween = null; startDive('out', from); return }
@@ -495,6 +517,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     ;(window as unknown as { __cm: unknown }).__cm = {
       nodeBrightness: (id: string) => view?.brightness(id) ?? null,
       nodeRing: (id: string) => view?.ring(id) ?? null,
+      pixelRatio: () => renderer.getPixelRatio(),
       nodeScreenPos: (id: string) => screenPos(id),
       nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],

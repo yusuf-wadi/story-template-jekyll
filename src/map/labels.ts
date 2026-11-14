@@ -13,6 +13,8 @@ export interface Labels {
   setReveal(k: number): void
   /** Visited labels read at full brightness; the rest stay muted. */
   setVisited(isVisited: (id: string) => boolean): void
+  /** Scale the distance fade (the camera sits farther back on portrait phones). */
+  setDepthScale(k: number): void
 }
 
 /** Distance (world units) at which labels are fully opaque, and where they bottom out. */
@@ -33,6 +35,7 @@ export function createLabels(host: HTMLElement): Labels {
   let els = new Map<string, HTMLElement>()
   const size = new Map<string, { w: number; h: number }>()
   const nudge = new Map<string, { dy: number; hidden: boolean }>()
+  let depth = 1
   const v = new THREE.Vector3()
   const camPos = new THREE.Vector3()
 
@@ -65,7 +68,7 @@ export function createLabels(host: HTMLElement): Labels {
         el.style.visibility = ''
         const x = ((v.x + 1) / 2) * w
         const y = ((1 - v.y) / 2) * h
-        const t = Math.min(1, Math.max(0, (p.distanceTo(camPos) - NEAR) / (FAR - NEAR)))
+        const t = Math.min(1, Math.max(0, (p.distanceTo(camPos) - NEAR * depth) / ((FAR - NEAR) * depth)))
         const op = dim?.has(id) ? DIM_OPACITY : dim ? 1 : 1 - t * (1 - MIN_OPACITY)
         let sz = size.get(id)
         if (!sz || !sz.w) { sz = { w: el.offsetWidth, h: el.offsetHeight }; size.set(id, sz) }
@@ -92,6 +95,7 @@ export function createLabels(host: HTMLElement): Labels {
       size.clear()
       nudge.clear()
     },
+    setDepthScale(k) { depth = k },
     setVisited(isVisited) { for (const [id, el] of els) el.classList.toggle('is-visited', isVisited(id)) },
     setReveal(k) { layer.style.opacity = k >= 1 ? '' : k.toFixed(3) },
   }
