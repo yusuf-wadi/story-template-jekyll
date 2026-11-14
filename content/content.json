@@ -1,0 +1,692 @@
+{
+  "person": {
+    "name": "Yusuf Wadi",
+    "tagline": "Engineer. Artist. Curious about how minds compute.",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/yusuf-wadi"
+      },
+      {
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/in/yusuf-wadi"
+      }
+    ],
+    "email": "yusufwadi1@gmail.com"
+  },
+  "sections": [
+    {
+      "id": "projects",
+      "title": "Projects",
+      "region": "frontal"
+    },
+    {
+      "id": "work",
+      "title": "Work",
+      "region": "parietal"
+    },
+    {
+      "id": "research",
+      "title": "Research",
+      "region": "temporal"
+    },
+    {
+      "id": "worlds",
+      "title": "Worlds",
+      "region": "occipital"
+    },
+    {
+      "id": "craft",
+      "title": "Craft",
+      "region": "cerebellum"
+    },
+    {
+      "id": "next",
+      "title": "Now & next",
+      "region": null
+    }
+  ],
+  "items": [
+    {
+      "id": "tinygrad-ngp",
+      "section": "projects",
+      "title": "TinyNeRF and Instant-NGP in tinygrad",
+      "dates": "Aug 2024",
+      "summary": "I reimplemented TinyNeRF and Instant-NGP's multiresolution hash encoding inside tinygrad, a minimal deep-learning framework.",
+      "body": "I wanted to understand NeRF below the level of a library call, so I rebuilt it in tinygrad. The model has per-level hash tables with spatial hashing, density and color MLPs, positional encoding, volume rendering and LAMB optimization, with a JIT-compiled render path.\n\ntinygrad was missing several ops I needed, so I wrote them: a 5-D bilinear `grid_sample`, `roll`, an exclusive `cumprod` and `meshgrid`, plus a small data loader.\n\nTinyNeRF trained and rendered novel views. The Instant-NGP model ran end to end on synthetic data; scaling it to larger real datasets was still open when I stopped. It pairs with my ACM NeRF benchmarking study, and it is the project where I did the framework-level work myself.",
+      "tags": [
+        "ML",
+        "NeRF",
+        "tinygrad",
+        "hash encoding",
+        "from scratch"
+      ],
+      "links": [
+        {
+          "label": "GitHub (branch wadi)",
+          "url": "https://github.com/yusuf-wadi/tinygrad/tree/wadi"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "flowstate",
+      "section": "projects",
+      "title": "FlowState",
+      "dates": "May 2023",
+      "summary": "A real-time brain-computer interface that uses EEG alpha-band power as an attention signal to speed up or slow down video playback.",
+      "body": "FlowState reads EEG from a Muse headband over Lab Streaming Layer and computes alpha-band power as a rough attention signal. When attention drops, YouTube playback speeds up or slows down in response.\n\nIt is a proof of concept, not a product. What I liked about it was the full loop: a signal from a head, a bit of signal processing, and something you can see change on a screen. It was my first hands-on pass at EEG and fed directly into my later interest in neural decoding.",
+      "tags": [
+        "BCI",
+        "EEG",
+        "Python",
+        "signal processing"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/FlowState"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "mtg-vector-math",
+      "section": "projects",
+      "title": "mtg-vector-math",
+      "dates": "May 2026",
+      "summary": "Distilled card embeddings for Magic: The Gathering, small enough to run as pure numpy on a serverless function.",
+      "body": "A bge-small teacher model produces 105-dimensional soft labels for cards. A TF-IDF plus two-layer MLP student learns to match them, so inference needs only numpy: roughly 2 to 5 MB of weights and a cold start under 100 ms on Vercel.\n\nI checked that the embedding space still behaves like one by running analogy tests in the king/queen style on card concepts. The point was to see how much of a large model's structure a tiny model can keep, and to ship it somewhere cheap.",
+      "tags": [
+        "ML",
+        "embeddings",
+        "knowledge distillation",
+        "numpy",
+        "Vercel"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/mtg-vector-math"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "mtg-oracle",
+      "section": "projects",
+      "title": "mtg-oracle",
+      "dates": "May – Oct 2026",
+      "summary": "A Magic: The Gathering deck-matching engine with TF-IDF, keyword and hybrid scoring, running live on Vercel.",
+      "body": "mtg-oracle matches a player's cards to decks using TF-IDF cosine similarity, keyword matching, and a hybrid of the two, with penalties that account for prerequisites a deck needs. It runs as a Python serverless API on Vercel, and a monthly GitHub Actions job refreshes the card data.\n\nI designed the scoring approach and the architecture and built it with AI-assisted tooling, which is how I ship working products quickly. The design decisions are mine; the interesting part was deciding what \"a good match\" should mean.",
+      "tags": [
+        "search",
+        "TF-IDF",
+        "Python",
+        "Vercel",
+        "GitHub Actions"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/mtg-oracle"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "tcg-scanner",
+      "section": "projects",
+      "title": "TCG Scanner",
+      "dates": "May – Jun 2026",
+      "summary": "A real-time trading-card scanner that recognizes cards fully on the device, with no cloud calls.",
+      "body": "TCG Scanner is an Expo / React Native app with native Swift and Kotlin frame-processor plugins. Recognition is tiered: a perceptual hash of the art box and set symbol, a BK-tree for Hamming nearest-neighbor lookup, an Apple Vision OCR cross-check, and trigram-indexed Levenshtein matching on the text, all against a local SQLite database.\n\nThe constraint I set was zero cloud: it should work offline and fast enough to scan as you move the camera. Each tier is cheap and narrows down the candidates for the next one.",
+      "tags": [
+        "computer vision",
+        "React Native",
+        "Swift",
+        "Kotlin",
+        "on-device"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "chess-vis",
+      "section": "projects",
+      "title": "chess_vis",
+      "dates": "Aug 2023",
+      "summary": "A Python visualizer that shows which squares are contested in a chess position.",
+      "body": "chess_vis takes a position in FEN notation and draws which squares each side attacks, so contested squares stand out. It is written by hand in object-oriented Python.\n\nI built it while mentoring at a chess club, as a teaching aid: it is easier to explain why a square matters when you can see both sides pressing on it.",
+      "tags": [
+        "Python",
+        "chess",
+        "visualization",
+        "teaching"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/chess_vis"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "freaqy",
+      "section": "projects",
+      "title": "freaqy",
+      "dates": "Mar 2026",
+      "summary": "A machine-learning mean-reversion trading research system built on Freqtrade and FreqAI, with 105 strategy versions.",
+      "body": "freaqy is crypto trading research on 5.5 years of 15-minute, 1-hour and 4-hour data across 14 pairs. I went through 105 strategy versions: rule-based z-score mean reversion first, then ML with LightGBM and XGBoost, and a stacking ensemble that requires models to agree. The training target is z-score reversion rather than noisy raw returns, and circuit breakers (daily loss limit, loss cooldown, volatility gate) sit outside the model.\n\nThe most useful lesson was about honesty in backtests. I overfit badly at first (402 features on 557 samples), rebuilt with 31 hand-picked features, and showed that fee assumptions alone can flip a strategy from profit to loss.",
+      "tags": [
+        "ML",
+        "trading",
+        "LightGBM",
+        "XGBoost",
+        "backtesting"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "therapt",
+      "section": "projects",
+      "title": "TheraPT / mun-ching",
+      "dates": "Aug 2022 – Jan 2023",
+      "summary": "An LLM therapy chatbot, and my first time fine-tuning a language model.",
+      "body": "With Omar Rashdan, who studies cognitive science, I fine-tuned GPT-3 first on synthetic therapist and client dialogues, then on about 200,000 lines of therapy transcripts. On noisy transcribed speech, careful prompt engineering beat fine-tuning, which I did not expect.\n\nWe added conversation memory and a Tkinter interface, then moved to a Vue/Nuxt web app deployed on Linode. It was my way into fine-tuning and into thinking about how a model should behave in a sensitive setting.",
+      "tags": [
+        "LLM",
+        "fine-tuning",
+        "GPT-3",
+        "Vue",
+        "Nuxt"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/theraPT"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "powerslides",
+      "section": "projects",
+      "title": "PowerSlides",
+      "dates": "May – Sep 2023",
+      "summary": "A Streamlit app that turns a prompt or text into a PowerPoint deck.",
+      "body": "PowerSlides uses an LLM and Pandoc to generate `.pptx` decks from a prompt or pasted text. It is Dockerized and was publicly hosted for a time on Google Cloud.\n\nIt is fun and very useful, and it is where I settled on Streamlit as my favorite frontend framework for getting a Python idea in front of people quickly.",
+      "tags": [
+        "LLM",
+        "Streamlit",
+        "Pandoc",
+        "Docker",
+        "Python"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "autoapply",
+      "section": "projects",
+      "title": "autoApply",
+      "dates": "Oct 2022 – Dec 2023",
+      "summary": "A Selenium and BeautifulSoup script that automates filling in applications on Greenhouse job boards.",
+      "body": "autoApply was my introduction to web scraping and browser automation. It drives a browser with Selenium, reads pages with BeautifulSoup, and fills in applications on Greenhouse-hosted job boards.\n\nI learned how brittle page structure is, how to make a script wait for the page rather than the other way round, and how to keep an automation from doing something I did not intend. The earlier resume line says it sped up applying by up to 6x.",
+      "tags": [
+        "automation",
+        "Selenium",
+        "BeautifulSoup",
+        "Python"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/autoApply"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "camper-registry",
+      "section": "projects",
+      "title": "camper_registry",
+      "dates": "Jun 2024",
+      "summary": "A QR-code attendance system I built for a summer camp.",
+      "body": "A summer camp needed a way to take attendance for about 50 campers, and nothing off the shelf fit, so I built it. Each camper gets a QR code, scanning it records attendance, and the system was deployed and used.\n\nIt is a small tool, but it had a real user with a real need, which made it a good lesson in building the simplest thing that works and shipping it.",
+      "tags": [
+        "Python",
+        "QR codes",
+        "web app",
+        "shipped"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/camper_registry"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "lumii",
+      "section": "projects",
+      "title": "Lumii",
+      "dates": "Sep 2025",
+      "summary": "A modular on-device voice therapy assistant tuned for the Raspberry Pi 5.",
+      "body": "Lumii runs entirely on a Raspberry Pi 5 (ARM64). Audio streams through callbacks, voice activity detection is JIT-compiled with Numba, Whisper handles speech-to-text, VADER scores emotion, and a local LLM runs through Ollama. Replies are spoken with ElevenLabs, and a safety layer filters crisis terms.\n\nMost of the work was making the pieces fit a small ARM board: multiprocessing with CPU affinity tuning so audio capture never starves the model.",
+      "tags": [
+        "LLM",
+        "Raspberry Pi",
+        "Whisper",
+        "Ollama",
+        "edge"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "pmsi",
+      "section": "projects",
+      "title": "PMSI: predictive maintenance",
+      "dates": "Oct 2026",
+      "summary": "A Toyota hackathon project: unsupervised anomaly detection over vehicle telemetry with subsystem-level fault attribution.",
+      "body": "I was the sole author of the ML inference server for PMSI, a team entry in an internal Toyota hackathon. The data was about 7 GB of CAN telemetry from 51 vehicles, with no failure labels, so the model had to be unsupervised.\n\nI built a PCA baseline and a PyTorch masked autoencoder and combined them into a hybrid detector. Per-feature reconstruction error gives both an anomaly score and the subsystem likely at fault. On a synthetic fault-injection test, brake and engine faults were detected about 100% of the time. The scorer is a stateless FastAPI service with weights exported to numpy, so it runs without torch on an AWS Lambda container.",
+      "tags": [
+        "ML",
+        "anomaly detection",
+        "PyTorch",
+        "FastAPI",
+        "AWS Lambda",
+        "hackathon"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "toyota-apple-maps",
+      "section": "work",
+      "title": "Toyota: Apple Maps EV routing",
+      "dates": "Jan 2025 – present",
+      "summary": "I led the backend for Toyota's integration with Apple Maps EV routing on CarPlay, from proof of concept to production.",
+      "body": "I am a Software Engineer at Toyota Motor North America (Oct 2024 to present). I led Toyota's Apple Maps EV routing integration on CarPlay from proof of concept to production in about 5 months. It is live in 3 AWS regions and streams over a million vehicle records a day from thousands of Toyota EVs.\n\nThe backend is Go on AWS EKS. A fault-tolerant Kinesis consumer uses concurrent shard workers, a circuit breaker and exponential backoff, and writes with idempotent atomic MongoDB upserts, which removed duplicate records. A low-latency REST API with Datadog tracing and structured logging serves single-digit-millisecond p95 latency in-service, far under its 200 ms SLO, and stays above its 99.5% success target.\n\nI also authored physics-based EV consumption and DC fast-charging models in Apple's EV portal, validated against real test-drive traces to about 1% mean state-of-charge error.",
+      "tags": [
+        "Go",
+        "AWS",
+        "Kinesis",
+        "MongoDB",
+        "EKS",
+        "Apple Maps"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "toyota-hems",
+      "section": "work",
+      "title": "Toyota: home energy management (HEMS)",
+      "dates": "Mar 2026 – present",
+      "summary": "I build Go microservices for Toyota's home EV-charging platform, which is still in the design and build phase.",
+      "body": "HEMS is Toyota's home EV charging and energy platform, with bidirectional charging. It is a team effort and still before production. I built Go microservices for it, including an OCPP 2.1 WebSocket gateway with mTLS (Security Profile 3) and Kafka message streaming, plus boot and event services for charger telemetry and vehicle-to-home backup-power events.\n\nI also proposed and carried out a redesign of firmware distribution, from an always-on EKS service to event-driven AWS Lambda and Step Functions, because the workload runs only about twice a year and should not pay for idle capacity. I built the signing workflow with mTLS OAuth, async callbacks and LocalStack-based testing.",
+      "tags": [
+        "Go",
+        "OCPP",
+        "Kafka",
+        "AWS Lambda",
+        "Step Functions",
+        "IoT"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "toyota-charging-data",
+      "section": "work",
+      "title": "Toyota: charging-station data health",
+      "dates": "Nov 2024 – Feb 2025",
+      "summary": "A data-quality pipeline and dashboard over more than 100,000 EV charging-station records from five provider networks.",
+      "body": "I built a geospatial data-quality pipeline and a Streamlit dashboard over 100,000+ EV charging-station records from 5 provider networks. It surfaces stale, missing and inconsistent station data, and coverage gaps, sometimes called charging deserts.\n\nThe dashboard uses Plotly maps with hover details, box and lasso selection and multi-column filtering, and it is Dockerized so other teams can run it without setup. I delivered it to the navigation team and helped their engineers get started with it.",
+      "tags": [
+        "Python",
+        "Elasticsearch",
+        "Streamlit",
+        "Plotly",
+        "Docker",
+        "data quality"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "toyota-competitive-analysis",
+      "section": "work",
+      "title": "Toyota: competitive teardown",
+      "dates": "Dec 2024 – Jan 2025",
+      "summary": "I led a teardown of Tesla's app ecosystem and presented it to Toyota Motor Corporation executives.",
+      "body": "I led a competitive teardown of Tesla's app ecosystem, comparing 110 app frameworks on the Toyota side with 10 on Tesla's. I built the analysis deck and presented the findings to Toyota Motor Corporation executives in Japan.\n\nThe point was to see what a product team could learn from how a competitor structures its mobile and in-car experience, and to put that in a form executives could act on.",
+      "tags": [
+        "product analysis",
+        "presentation",
+        "mobile",
+        "competitive analysis"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "seeloz",
+      "section": "work",
+      "title": "Seeloz: Data Science Intern",
+      "dates": "May – Aug 2024",
+      "summary": "A summer at an AI supply-chain startup working on reinforcement-learning simulation and a data-pipeline port.",
+      "body": "Seeloz is an AI inventory-optimization startup in Dallas. I developed a reinforcement-learning simulation of client inventory, covering finished and semi-finished goods, to optimize surplus, using Ray RLlib.\n\nI also ported stages of a Scala/Spark SAP ETL pipeline to SQL and led the investigation into why SQL and Scala inventory numbers diverged (date ranges, currency conversion, over-delivery adjustments). When the company lost its Azure SQL connection mid-project, I proposed and built a self-instantiating SQL Server database in Docker from client CSV files. It unblocked me and one other intern within a week.",
+      "tags": [
+        "reinforcement learning",
+        "Ray RLlib",
+        "SQL",
+        "Spark",
+        "Docker"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "scale-ai",
+      "section": "work",
+      "title": "Scale AI: data-annotation contract",
+      "dates": "Oct 2023 – May 2024",
+      "summary": "A remote contract reviewing and writing code as training data for code models.",
+      "body": "This was a data-annotation contract, found through Upwork. I reviewed, debugged and rated code responses, and wrote code and test cases as training data for code models. The work included side-by-side ratings, written justifications and tool-use prompts.\n\nI worked across Python, Java, React, Swift, SQL and C++. It was annotation work and did not involve training or evaluating models, and I list it so the timeline between graduating and my next internship is complete.",
+      "tags": [
+        "data annotation",
+        "code review",
+        "contract",
+        "Python"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "monoware",
+      "section": "work",
+      "title": "Monoware Studios: Full-Stack Developer Intern",
+      "dates": "Summers 2022 & 2023",
+      "summary": "Two summers building web apps, and a retrieval-augmented chatbot for company documents.",
+      "body": "I interned at Monoware Studios in Richardson, TX across two summers. In 2022 I started with a small onboarding project and then built web apps and a front end for a new-initiative prototype, using Vue, Nuxt and Tailwind CSS.\n\nIn 2023 I built a retrieval-augmented generation chatbot with LangChain and Pinecone, with a Nuxt/Vue web component, for searching internal company documents and FAQs. I do not know what became of it after I left, so I make no claim about its use.",
+      "tags": [
+        "Vue",
+        "Nuxt",
+        "Tailwind",
+        "LangChain",
+        "RAG",
+        "Pinecone"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "ecog-joystick",
+      "section": "research",
+      "title": "Decoding joystick movement from ECoG",
+      "dates": "Jul 2024",
+      "summary": "I co-led a Neuromatch Academy project that predicts continuous joystick trajectories from electrocorticography recordings.",
+      "body": "As research co-lead at Neuromatch Academy, I built a brain-computer-interface decoding pipeline that predicts continuous joystick cursor trajectories from ECoG recordings. I trained PyTorch autoencoders for feature extraction, including a smoothness-regularized LSTM autoencoder, and LSTMs for time-series decoding, and also tried CNN and Transformer decoders. Test RMSE was 0.094 on 855 held-out samples.\n\nHalf the team dropped out partway through. I re-scoped the project with my remaining teammate and later brought a returning member back in as presentation lead. We presented to the cohort, and the work was published on Neuromatch's site. This is my favorite project.",
+      "tags": [
+        "neuroscience",
+        "BCI",
+        "ECoG",
+        "PyTorch",
+        "LSTM",
+        "autoencoder"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/JoyStick_ECOG"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "nerf-study",
+      "section": "research",
+      "title": "Measuring immersion in NeRFs",
+      "dates": "Jan – May 2023",
+      "summary": "As research lead at ACM Research UTD, I helped benchmark four NeRF methods on 26 datasets for VR use.",
+      "body": "The study compared NeRF, Mip-NeRF, Nerfacto and Instant-NGP, trained through nerfstudio on 26 datasets. Eighteen were captured by our team (6 scenes with 3 capture methods: Insta360 One RS, Insta360 360 and iPhone 12 Pro, processed with COLMAP or Polycam) and 8 came from the original NeRF paper. Most training ran on an RTX 3090.\n\nWe measured train time, memory, storage, GPU usage, loss and accuracy against real data. NeRF and Mip-NeRF took up to about two days to train, while Nerfacto and Instant-NGP took minutes. I owned the Instant-NGP track, ran training and the test suite myself, and proposed the comparative-analysis framing that settled a disagreement about direction. The poster was titled \"Measuring Immersion in Neural Radiance Fields.\"",
+      "tags": [
+        "NeRF",
+        "GPU training",
+        "benchmarking",
+        "VR",
+        "research"
+      ],
+      "links": [
+        {
+          "label": "Study repo",
+          "url": "https://github.com/ACM-Research/nerf-or-nothing"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "neuromatch-program",
+      "section": "research",
+      "title": "Neuromatch computational neuroscience program",
+      "dates": "Jul 2024",
+      "summary": "A 128-hour intensive in neural modeling, machine learning for neural data, and causal inference.",
+      "body": "I completed Neuromatch Academy's Computational Neuroscience program, 128 hours in July 2024. It covers neural modeling, machine learning for neural data and causal inference, and ends in a team research project, which for me was the ECoG joystick decoding work.\n\nIt is the most direct route I have taken into how brains compute, and the reason I treat neuroscience as a working field and not only an interest.",
+      "tags": [
+        "neuroscience",
+        "computational neuroscience",
+        "course",
+        "Neuromatch"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "liminal-bevy",
+      "section": "worlds",
+      "title": "Liminal Bevy",
+      "dates": "Oct 2026",
+      "summary": "A first-person generator of procedural liminal spaces, written in Rust with Bevy and WGSL.",
+      "body": "Liminal Bevy grows corridors and rooms from a relational grammar defined in an editable RON recipe. Recipes can be mutated and crossed over, and walkability and seam invariants are checked before one world replaces another, so the player never steps into a broken space.\n\nIt is an exploration of how much feeling you can get from rules about adjacency and light alone. I built it with AI-assisted tooling, with the design and direction mine.",
+      "tags": [
+        "Rust",
+        "Bevy",
+        "WGSL",
+        "procedural generation",
+        "games"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "rarephish",
+      "section": "worlds",
+      "title": "Rarephish",
+      "dates": "2022 – Feb 2026",
+      "summary": "A seeded procedural idle fishing game with generative fish, first in Unity and later in Rust.",
+      "body": "Rarephish started in C# and Unity and moved to Rust and Bevy in 2026. Worlds are deterministic, built from a seeded ChaCha8 random number generator, and each fish is generated rather than hand-drawn, so a seed always reproduces the same pond.\n\nThe interesting problem is making generated things feel individual: small rules for shape, color and rarity that combine into something you want to collect.",
+      "tags": [
+        "Rust",
+        "Bevy",
+        "Unity",
+        "procedural generation",
+        "games"
+      ],
+      "links": [
+        {
+          "label": "GitHub (Rust)",
+          "url": "https://github.com/yusuf-wadi/rarephish-bevy"
+        },
+        {
+          "label": "GitHub (Unity)",
+          "url": "https://github.com/yusuf-wadi/rarephish"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "vr-modding",
+      "section": "worlds",
+      "title": "VR modding",
+      "dates": "2014 – 2022",
+      "summary": "Years of Unity modding for VR games, with Blender and 3D printing alongside.",
+      "body": "I made Unity mods for Blade & Sorcery and Risk of Rain 2, and used Blender for models and 3D printing to bring some of them into physical form.\n\nThis is where I learned to work inside a large game I did not write: reading how it fits together, adding to it without breaking it, and making a thing someone else will play.",
+      "tags": [
+        "Unity",
+        "VR",
+        "Blender",
+        "3D printing",
+        "modding"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "kinesis-vr",
+      "section": "worlds",
+      "title": "Kinesis",
+      "dates": "2022",
+      "summary": "A VR telekinesis game design with optional control through alpha-wave energy.",
+      "body": "Kinesis is a Unity VR game concept in which the player moves objects with telekinesis, and an optional EEG alpha-wave signal can modulate how much energy they have. It exists as a design and a prototype.\n\nIt was an early attempt to join two of my interests, games and brain-computer interfaces, and led more or less directly to FlowState.",
+      "tags": [
+        "VR",
+        "Unity",
+        "BCI",
+        "game design"
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/yusuf-wadi/kinesis"
+        }
+      ],
+      "status": null
+    },
+    {
+      "id": "tiltshift",
+      "section": "worlds",
+      "title": "TiltShift",
+      "dates": "Nov 2024",
+      "summary": "A concept prototype that converts 2D photos and video into 3D using monocular depth estimation.",
+      "body": "TiltShift explores turning flat photos and video into 3D scenes with monocular depth estimation. I looked at Depth Pro, MiDaS and TMPI, and built a video pipeline on a MiDaS fork.\n\nIt is a prototype, not a finished tool, and the question behind it is how far a single image can take you toward a believable sense of depth.",
+      "tags": [
+        "computer vision",
+        "depth estimation",
+        "3D",
+        "prototype"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "skills",
+      "section": "craft",
+      "title": "Skills",
+      "dates": "2026",
+      "summary": "The languages and tools I use most, grouped by how much I have shipped with them.",
+      "body": "**Daily and in production:** Go and Python, on AWS (EKS, Lambda, Kinesis, Step Functions, S3, API Gateway), with MongoDB, Docker, Kubernetes, Datadog and REST/OpenAPI services.\n\n**Machine learning:** PyTorch, scikit-learn, pandas and NumPy, LightGBM and XGBoost, plus LLM work with fine-tuning, RAG and local models through Ollama. Anomaly detection, autoencoders and time-series modeling are the areas I know best.\n\n**Familiar or growing:** Rust, Swift, TypeScript, Kafka, Elasticsearch, Spark, Unity and Bevy. I use agentic coding tools daily.",
+      "tags": [
+        "Go",
+        "Python",
+        "PyTorch",
+        "AWS",
+        "MongoDB",
+        "Rust"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "imc-prosperity",
+      "section": "craft",
+      "title": "IMC Prosperity and Optiver Ready Trader Go",
+      "dates": "2023 – 2024",
+      "summary": "Trading competitions where I led small teams; 50th of 10,000 in IMC Prosperity.",
+      "body": "In IMC Prosperity 2024 I was research lead of a three-person team writing market-making and mean-reversion strategies, and we placed 50th of 10,000, the top 0.5%. In Optiver's Ready Trader Go (March 2023) I led a three-person team building low-latency trading algorithms in Python and C++.\n\nBoth used the same method: a custom market simulator and Bayesian parameter search with Hyperopt, parallelized on Apache Spark for about a 9x speedup.",
+      "tags": [
+        "trading",
+        "competition",
+        "Hyperopt",
+        "Spark",
+        "simulation"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "utd-bs-cs",
+      "section": "craft",
+      "title": "B.S. Computer Science, UT Dallas",
+      "dates": "Aug 2020 – Dec 2023",
+      "summary": "A computer science degree with coursework in machine learning, AI, databases, operating systems and algorithms.",
+      "body": "I studied computer science at the University of Texas at Dallas, graduating in December 2023. Coursework included machine learning, artificial intelligence, data science methods, databases, automata theory, advanced data structures and algorithms, operating systems and computer architecture.\n\nMy senior design project, Raybender, was a Swift macOS command launcher built with a team of three, in which I was the top contributor. I was in ACM Research, the Data Science Club and the Japanese Language Association.",
+      "tags": [
+        "education",
+        "computer science",
+        "UTD"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "neuromatch-cert",
+      "section": "craft",
+      "title": "Neuromatch certificate",
+      "dates": "Jul 2024",
+      "summary": "A 128-hour Computational Neuroscience certificate from Neuromatch Academy.",
+      "body": "Neuromatch Academy's Computational Neuroscience program, 128 hours, in July 2024. It is also the setting for my ECoG decoding research project; see that entry for the work itself.",
+      "tags": [
+        "certificate",
+        "neuroscience",
+        "Neuromatch"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "languages",
+      "section": "craft",
+      "title": "Languages",
+      "dates": "Ongoing",
+      "summary": "English (native), Arabic (fluent) and basic Japanese.",
+      "body": "I speak English natively and Arabic fluently, and I have basic Japanese from the Japanese language club at university.",
+      "tags": [
+        "languages",
+        "English",
+        "Arabic",
+        "Japanese"
+      ],
+      "links": [],
+      "status": null
+    },
+    {
+      "id": "next-one",
+      "section": "next",
+      "title": "[YUSUF TO WRITE]",
+      "dates": "",
+      "summary": "[YUSUF TO WRITE]",
+      "body": "[YUSUF TO WRITE]",
+      "tags": [],
+      "links": [],
+      "status": "now"
+    },
+    {
+      "id": "next-two",
+      "section": "next",
+      "title": "[YUSUF TO WRITE]",
+      "dates": "",
+      "summary": "[YUSUF TO WRITE]",
+      "body": "[YUSUF TO WRITE]",
+      "tags": [],
+      "links": [],
+      "status": "upcoming"
+    }
+  ],
+  "clusterLabelOverrides": {}
+}
