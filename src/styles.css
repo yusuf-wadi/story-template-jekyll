@@ -17,7 +17,7 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 .region.is-complete { stroke-opacity: .7; }
 .region.is-pulse { animation: pulse .9s ease-out; }
 @keyframes pulse { 0% { fill-opacity: .8; } 100% { fill-opacity: var(--region-rest); } }
-.writing-mark { position: absolute; left: 10%; top: 63%; font-size: .7rem; letter-spacing: .08em; color: var(--fg); opacity: .4; text-decoration: none; }
+.writing-mark { position: absolute; left: 7%; top: 59%; font-size: .7rem; letter-spacing: .08em; color: var(--fg); opacity: .4; text-decoration: none; }
 .writing-mark:hover, .writing-mark:focus-visible { opacity: 1; text-decoration: underline; }
 .region-label { position: absolute; bottom: 64px; left: 0; right: 0; text-align: center; font-size: 1rem; letter-spacing: .1em; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .region-label.is-on { opacity: .9; }

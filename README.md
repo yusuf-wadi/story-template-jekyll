@@ -16,6 +16,8 @@ Command in terminal in root dir: `bundle exec jekyll serve`
 
 # Credits
 
+Head silhouette "Profile Silhouette 02" by Mcbdixon, Wikimedia Commons, CC0 (https://commons.wikimedia.org/wiki/File:Profile_Silhouette_02.svg).
+
 Original README from HTML5 UP:
 
 ```
