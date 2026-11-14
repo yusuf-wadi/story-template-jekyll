@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildWriting } from '../../scripts/build-writing'
@@ -91,11 +92,19 @@ describe('buildWriting', () => {
     buildWriting(src, out, SITE)
     const rss = readFileSync(join(out, 'writing/rss.xml'), 'utf8')
     expect(rss.match(/<pubDate>([^<]*)<\/pubDate>/)![1]).toMatch(/^\w{3}, \d{2} \w{3} \d{4} 00:00:00 GMT$/)
-    for (const t of ['title', 'link', 'description']) expect(rss).toMatch(new RegExp(`<channel><title>[^]*<${t}>`))
+    const channel = rss.slice(0, rss.indexOf('<item>'))
+    expect(channel).toContain('<channel><title>Yusuf Wadi: Writing</title>')
+    expect(channel).toContain(`<link>${SITE}/writing/</link>`)
+    expect(channel).toContain('<description>Notes and essays by Yusuf Wadi.</description>')
+    expect(channel).toContain('<lastBuildDate>')
+    expect(channel).toContain('<atom:link ')
     expect(rss).toContain('xmlns:atom="http://www.w3.org/2005/Atom"')
     expect(rss).toContain(`<atom:link href="${SITE}/writing/rss.xml" rel="self" type="application/rss+xml"/>`)
     expect(rss).toContain('<lastBuildDate>Mon, 09 Mar 2026 00:00:00 GMT</lastBuildDate>')
-    expect(rss.replace(/&(amp|lt|gt|quot|apos);/g, '')).not.toMatch(/&/)
-    expect(rss.match(/<item>/g)).toHaveLength(rss.match(/<\/item>/g)!.length)
+    const file = join(out, 'writing/rss.xml')
+    const r = spawnSync('xmllint', ['--noout', file], { encoding: 'utf8' })
+    if (r.error) { console.warn('SKIPPED well-formedness check: xmllint not found'); return }
+    expect(r.stderr).toBe('')
+    expect(r.status).toBe(0)
   })
 })
