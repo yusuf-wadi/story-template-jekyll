@@ -318,21 +318,24 @@ Old Jekyll files (`_config.yml`, `_experience/`, `_gallery/`, `_includes/`, `_la
 
 ---
 
-### Task 8: Completion → PCB
+### Task 8: Per-node traces → PCB (updated 11/13 per Yusuf)
 
 **Files:**
-- Create: `src/profile/pcb.ts`, `tests/unit/pcb.test.ts`, `tests/e2e/complete.spec.ts`
-- Modify: `src/profile/profile.ts`, `src/app.ts`
+- Create: `src/profile/pcb.ts`, `tests/e2e/pcb.spec.ts`
+- Modify: `src/profile/head.ts` (circuit-shaped region outlines), `src/profile/profile.ts`, `src/app.ts`, `src/styles.css`
 
 **Interfaces:**
-- Produces: `generatePcb(regionPath: SVGPathElement, seed: number): { traces: string[]; pads: {x:number;y:number}[]; edgePads: {x:number;y:number}[] }`. Traces are orthogonal and 45° polylines, every point inside the region (checked with `isPointInFill`). Edge pads sit within 6px of the region boundary. The same seed gives the same output. `drawPcb(svgGroup, pcb, animate: boolean): Promise<void>` draws in with the stroke-dash technique, about 1.5s, and instantly when reduced motion is on.
-- `app.ts`: on returning to the profile, any section that just became complete gets `setComplete(region, true)`, and on load already-complete sections get `setComplete(region, false)`. A section of the `next` kind never counts toward the 5.
+- Region outlines in `head.ts` become circuit-shaped: orthogonal edges with 45° chamfers (no free curves), same ids, still non-overlapping and inside the silhouette, roughly where the lobes are. Run the same containment check as Task 7c.
+- `generatePcb(regionPath: SVGPathElement, itemIds: string[], seed: number): { traces: Record<string, string>; pads: { x: number; y: number }[]; edgePads: { x: number; y: number }[] }`: one SVG path `d` per item id, each an orthogonal/45° polyline from a distinct edge pad to an inner component pad; every point inside the region (`isPointInFill`); traces don't cross each other; deterministic per seed (seed = hash of region id). At least 2 `edgePads`.
+- `drawTraces(group: SVGGElement, pcb, visible: Set<string>, animateIds: Set<string>): Promise<void>`: shows traces for visible ids; ids in `animateIds` draw in with stroke-dash over ~900 ms (instant under reduced motion).
+- `profile.ts`: `setProgress(region, visitedIds: Set<string>, newlyVisited: Set<string>)` replaces `setComplete`'s role for traces; `.is-pcb` is added when all of the region's items are visited (mask fill + lit edge pads). The app remembers which ids were already drawn (in memory for the session) so only newly visited ones animate when the profile is shown again.
+- Tests run in Playwright (page.evaluate on the dev server) — ruling: jsdom lacks `isPointInFill`.
 
-- [ ] **Step 1: Failing tests.** Unit (in jsdom or the browser via vitest browser mode; pick one and note it in `vitest.config.ts`): same seed gives the same traces, there's at least 1 trace and at least 2 edge pads. E2e: pre-seed localStorage with all `research` ids except one, open the last one, Escape twice, and `#region-temporal` has class `is-pcb` with `[data-progress]` reading `1 / 5`.
+- [ ] **Step 1: Failing e2e** `pcb.spec.ts`: (a) for each region, `generatePcb` returns one trace per item, all trace points inside the region, same seed → same output, ≥ 2 edge pads; (b) pre-seed localStorage with one `research` id visited → on `/`, `#region-temporal`'s PCB group shows exactly 1 trace; (c) visit all research ids → `#region-temporal` has `is-pcb` and `[data-progress]` reads `1 / 5`; (d) visiting one more item while in a section then returning to `/` animates exactly that trace (it has an active stroke-dash animation).
 - [ ] **Step 2:** Run. Expect FAIL.
 - [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run. Expect PASS.
-- [ ] **Step 5:** Commit: `feat: completed regions solidify into PCB traces`.
+- [ ] **Step 4:** All suites + tsc + build pass. Screenshots of the profile with a partly and a fully wired region to the SDD workspace.
+- [ ] **Step 5:** Commit: `feat: each opened node wires a trace on its lobe's PCB`.
 
 ---
 

@@ -62,11 +62,15 @@ nodes of that section's 3D map. About 1.2 s, eased. Reduced-motion users get a f
 - Opening a node marks it visited. Narrow screens (≤ 600 px): the card grows from the node and then settles
   as a bottom sheet. Reduced motion: a quick fade instead of the morph.
 
-### 5. Completion → PCB
-- When every node in a section is visited, the section is complete. On returning to the profile, that region
-  "solidifies": its outline fills with copper circuit traces, pads and vias (green solder mask, copper
-  gold) that draw themselves in.
-- Traces end at the region's edge in pads that line up with neighboring regions.
+### 5. Wiring the lobes → PCB (updated 11/13 per Yusuf)
+- Each brain region is drawn roughly circuit-shaped: straight edges with 45° chamfered corners, gaps between
+  regions that read like board traces.
+- Each region holds one circuit trace per item in its section (a polyline from an edge pad, through vias, to a
+  component pad inside the region). **Every node you open draws in its own trace** on that lobe's PCB (copper
+  trace, green solder-mask tint under it), animated the next time the profile is shown; traces already earned
+  appear instantly on later visits.
+- When every item in a section is visited, the region is complete: the last trace lands, the region's mask
+  fills fully and its edge pads light up, ready to connect to neighboring regions.
 
 ### 6. Easter egg — the circuit closes
 When all five regions are complete, the pads connect across region borders, current visibly flows through the
