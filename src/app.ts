@@ -7,8 +7,16 @@ import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
 import { step } from './tour'
 import { playEgg } from './egg/egg'
+import { renderList } from './list/list'
 
-export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress): void {
+export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress, opts: { webgl?: boolean } = {}): void {
+  if (opts.webgl === false) {
+    // No WebGL: every route is the plain list, and it stays there.
+    if (location.hash !== '#list') location.hash = '#list'
+    renderList(root, content, { backToBrain: false })
+    window.addEventListener('hashchange', () => { if (location.hash !== '#list') location.hash = '#list' })
+    return
+  }
   // Navigate and render synchronously so rapid input (click then key) never sees a stale route.
   let lastHash: string | null = null
   function go(hash: string) {
@@ -20,10 +28,10 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     progress,
     onEnter: (section) => go(toHash({ view: 'section', section })),
   })
-  // Placeholder for section/item/list views (replaced by Tasks 6/7/10).
-  const placeholder = document.createElement('div')
-  placeholder.hidden = true
-  root.append(placeholder)
+  const listHost = document.createElement('div')
+  listHost.hidden = true
+  root.append(listHost)
+  let listRendered = false
 
   const sceneHost = document.createElement('div')
   sceneHost.className = 'scene-host'
@@ -94,9 +102,10 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     currentRoute = route
     scene.cancelTransitions()
     if (route.view !== 'item') reader.close()
+    if (route.view !== 'list') listHost.hidden = true
     if (route.view === 'section' || route.view === 'item') {
       profile.hide()
-      placeholder.hidden = true
+      listHost.hidden = true
       sceneHost.dataset.view = route.view
       if (route.view === 'item') progress.visit(route.item)
       scene.refresh()
@@ -117,15 +126,14 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     }
     if (currentSection) { currentSection = null; void scene.exit(); hoverLabel.textContent = '' }
     if (route.view === 'profile') {
-      placeholder.hidden = true
+      listHost.hidden = true
       profile.show()
       void maybeEgg()
       return
     }
     profile.hide()
-    placeholder.dataset.view = route.view
-    placeholder.textContent = route.view
-    placeholder.hidden = false
+    if (!listRendered) { renderList(listHost, content); listRendered = true }
+    listHost.hidden = false
   }
   window.addEventListener('hashchange', render)
   render()
