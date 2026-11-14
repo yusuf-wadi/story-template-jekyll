@@ -20,7 +20,7 @@
 - Sections with fewer than 6 items get no clusters, and hover shows the item name.
 - Respect `prefers-reduced-motion` (dive becomes a fade, no camera flights). Every `localStorage` access goes through try/catch.
 - Blog posts never count toward completion.
-- Original artwork only for the head (no traced or stock silhouettes).
+- Head art: the CC0 Wikimedia silhouette in `assets-src/head-profile-cc0.svg` (changed 11/13 per Yusuf); region paths are ours.
 
 ## Review Focus
 
@@ -261,6 +261,43 @@ Old Jekyll files (`_config.yml`, `_experience/`, `_gallery/`, `_includes/`, `_la
 
 ---
 
+### Task 7b: Obsidian-style 3D graph (added 11/13 per Yusuf)
+
+**Files:**
+- Modify: `pipeline/build_layout.py`, `pipeline/tests/test_build_layout.py`, `content/layout.json` (regenerate), `src/types.ts`, `scripts/check-sync.ts`, `src/map/sectionScene.ts`, `src/map/clusterFields.ts`
+- Create: `src/map/forceSim.ts`, `src/map/labels.ts`, `tests/unit/forceSim.test.ts`, `tests/e2e/graph.spec.ts`
+
+**Interfaces:**
+- Pipeline: `knn_edges(emb: np.ndarray, ids: list[str], k: int = 2) -> list[tuple[str, str]]`: for each node, its k most cosine-similar others; undirected, deduplicated, sorted `(a, b)` with `a < b`, list sorted. `SectionLayout` gains `edges: [string, string][]` (all sections incl. < 6 items; a 1-node section has `[]`).
+- `src/map/forceSim.ts`: `createForceSim(nodes: { id: string; anchor: [number,number,number] }[], edges: [string,string][], opts?: { anchorK?: number; edgeK?: number; edgeLen?: number; repulse?: number; damping?: number }): { step(dt: number): void; positions: Map<string, THREE.Vector3>; pin(id: string, p: THREE.Vector3 | null): void; settle(steps: number): void; energy(): number }`. Hand-rolled (no new dependency): anchor springs, edge springs, O(n²) repulsion (n ≤ ~20), velocity damping.
+- `src/map/labels.ts`: `createLabels(host: HTMLElement): { set(items: { id: string; text: string }[]): void; update(camera, positions: Map<string,Vector3>, dim: Set<string> | null): void; clear(): void }`. DOM labels positioned by projection, opacity falls off with camera distance; dimmed labels at 0.15.
+- Scene: nodes are small spheres (radius 0.18 + 0.05·degree), edges a single `LineSegments` updated from sim positions each frame, node color = cluster hue (or one neutral hue when no clusters), unvisited 35% brightness / visited 100% (keep `refresh()`), hovering a node sets focus = {node} ∪ neighbors: others' nodes, edges and labels dim to 0.15. Dragging a node: pointerdown on node + move → `pin(id, worldPointOnCameraPlane)`; release → `pin(id, null)`; a drag never counts as a click (keep the 5px rule). Drag on empty space orbits. Reduced motion: `settle(300)` once and no per-frame sim.
+- Test hooks (DEV/`?e2e`): add `__cm.edges()` and `__cm.labelText(id)`.
+
+- [ ] **Step 1: Failing pytest:** `test_knn_edges_dedup_sorted` (3 hand-made vectors → expected edges), `test_edges_present_all_sections`, `test_single_node_no_edges`. Failing vitest `forceSim.test.ts`: with no edges and anchorK>0, after `settle(500)` every node is within 0.05 of its anchor; pinning a node moves it to the pin and its edge neighbor moves toward it; `energy()` decreases over `settle`.
+- [ ] **Step 2:** Run both. Expect FAIL.
+- [ ] **Step 3:** Implement pipeline edges, regenerate `layout.json` (check-sync stays green; extend `checkSync` to flag edges referencing unknown ids), then forceSim, labels, scene changes.
+- [ ] **Step 4: Failing e2e** `graph.spec.ts`: `#projects` shows a label for every node with the item title; `__cm.edges().length === layout.sections.projects.edges.length`; hovering a node makes a non-neighbor's label opacity < 0.3 and a neighbor's > 0.6. Then implement until green. All existing e2e suites stay green.
+- [ ] **Step 5:** `npm test && npm run e2e && npx tsc --noEmit && npm run build` and pytest pass. Save a screenshot of `#projects` to the SDD workspace.
+- [ ] **Step 6:** Commit: `feat: obsidian-style 3D graph with semantic edges and light physics`.
+
+---
+
+### Task 7c: CC0 head art + regions (added 11/13 per Yusuf)
+
+**Files:**
+- Modify: `src/profile/head.ts`, `src/styles.css`, `README.md` (credit line)
+- Source: `assets-src/head-profile-cc0.svg` (CC0, "Profile Silhouette 02", Wikimedia Commons, by Mcbdixon; embedded hidden PNG already stripped)
+
+**Interfaces:**
+- `HEAD_SVG` uses the CC0 silhouette path (scaled/translated into viewBox `0 0 800 800`, facing left) as a low-opacity outline + fill. Five region paths are redrawn to sit inside its cranium, non-overlapping, covering frontal (front-top), parietal (top-back), temporal (side, above ear), occipital (back), cerebellum (lower back, above neck). `REGION_IDS` unchanged. `[data-writing-mark]` repositioned next to the silhouette's mouth.
+
+- [ ] **Step 1:** Implement. Keep the existing profile e2e green (region ids, hover label, keyboard).
+- [ ] **Step 2:** Screenshot the profile to the SDD workspace; controller shows Yusuf.
+- [ ] **Step 3:** Commit: `art: CC0 head silhouette with redrawn brain regions`.
+
+---
+
 ### Task 8: Completion → PCB
 
 **Files:**
@@ -343,7 +380,7 @@ Old Jekyll files (`_config.yml`, `_experience/`, `_gallery/`, `_includes/`, `_la
 - Mobile (≤ 600px): pixel ratio capped at 1.5, cluster glow without bloom, tap for hover labels (the first tap shows the label, the second opens).
 - Performance budget: first load JS ≤ 250 KB gzip excluding three, and 60fps on an M-series laptop with frame time under 16ms in the section map.
 
-- [ ] **Step 1:** Draw the final head art: a left-facing profile with organic region boundaries, done as layered strokes with a low-opacity fill. Present a screenshot to Yusuf and iterate until he approves.
+- [ ] **Step 1:** Refine the head art from Task 7c with Yusuf's feedback (screenshot, iterate until he approves).
 - [ ] **Step 2:** Implement the dive and mobile behavior. Re-run `npm run e2e` (all suites green, including the Task 7 interrupt tests).
 - [ ] **Step 3:** Check performance with Playwright tracing or Chrome, and report the numbers.
 - [ ] **Step 4:** Commit: `polish: head art, dive transition, mobile tuning`.

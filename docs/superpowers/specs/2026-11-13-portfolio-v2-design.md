@@ -35,14 +35,21 @@ Exact item lists come from the content review (step 1 of the build), not from th
 The camera pushes into the clicked region. The region's 2D outline dissolves into particles that become the
 nodes of that section's 3D map. About 1.2 s, eased. Reduced-motion users get a fade.
 
-### 3. The section map
-- A 3D scene of nodes, one per item, placed by **semantic embedding** of the item's text, so similar work sits
-  close together.
-- Nodes are grouped by **e-means** (Meta FAIR, Faiss 1.16, Nov 2026) into soft-edged regions (translucent hulls
-  or glow fields). **Hovering a region shows its category label.** If a section has too few items to cluster
-  meaningfully (< 6), there are no regions and hovering shows just the item name.
-- Slow orbit drift, drag to rotate, scroll to zoom.
-- Unvisited nodes are dim. Visited nodes glow.
+### 3. The section map (Obsidian-style 3D graph — updated 11/13 per Yusuf)
+- Looks and behaves like Obsidian's graph view, in 3D: small round nodes, thin straight edges, and each
+  node's title as a text label beside it (labels fade with distance and when zoomed out).
+- Nodes are placed by **semantic embedding**, so similar work sits close together. **Edges** link each node to
+  its 2 most similar neighbors (cosine similarity of embeddings, union, deduplicated), so related work is
+  visibly connected even in small sections.
+- Light physics like Obsidian: a small force simulation with springs pulling each node toward its embedding
+  position and along its edges, plus mild repulsion. Nodes drift gently, settle, and can be dragged; neighbors
+  follow and spring back. Reduced motion: no drift, simulation settles instantly.
+- Hovering a node highlights it, its neighbors and their edges, and dims everything else (Obsidian's focus
+  behavior). Node size grows slightly with degree.
+- **e-means** clusters color the nodes (Obsidian "groups"): each cluster gets a hue, with a faint glow at its
+  centroid. **Hovering a cluster's glow shows its category label.** Sections with < 6 items have no clusters:
+  nodes share one hue and hover shows just the item name.
+- Drag empty space to rotate, scroll to zoom. Unvisited nodes are dim; visited nodes are bright.
 
 ### 4. Reading a node
 - Clicking a node flies the camera to it and opens a reading panel: title, dates, a short summary, the body,
@@ -100,10 +107,13 @@ the wording. A "rewire" button resets progress.
   1. Embed each item's title + summary + body with a local sentence-embedding model (bge-small).
   2. Per section, cluster with e-means (`faiss.contrib.e_means`), with k picked by silhouette score; skip if < 6 items.
   3. Reduce to 3D (UMAP, PCA fallback) and normalize into the scene volume.
-  4. Label each cluster from its top distinctive terms (c-TF-IDF), with hand overrides allowed in `content.json`.
-  5. Compute each section's nearest-neighbor tour order.
-  6. Write `content/layout.json` (committed, so the site build never needs Python).
-- The SVG head profile is drawn originally for this site (no traced or stock artwork).
+  4. Compute edges: each node to its 2 nearest neighbors by cosine similarity (undirected, deduplicated).
+  5. Label each cluster from its top distinctive terms (c-TF-IDF), with hand overrides allowed in `content.json`.
+  6. Compute each section's nearest-neighbor tour order.
+  7. Write `content/layout.json` (committed, so the site build never needs Python).
+- The head profile is the CC0 (public domain) silhouette "Profile Silhouette 02" from Wikimedia Commons (by
+  Mcbdixon), stored at `assets-src/head-profile-cc0.svg`. Region paths are drawn by us inside its cranium.
+  (Changed 11/13 per Yusuf: use an online SVG.)
 
 ## Testing
 
