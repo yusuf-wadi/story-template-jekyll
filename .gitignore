@@ -5,3 +5,7 @@ Gemfile.lock
 *.gem
 .jekyll-cache
 .superpowers/
+node_modules/
+dist/
+pipeline/.venv/
+test-results/
