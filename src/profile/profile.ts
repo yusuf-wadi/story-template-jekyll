@@ -1,6 +1,7 @@
 import type { Content, Region, SectionId } from '../types'
 import type { Progress } from '../progress'
 import { HEAD_SVG, REGION_IDS } from './head'
+import { mountLight } from './light'
 import { drawTraces, generatePcb, seedFor, type Pcb } from './pcb'
 
 export interface ProfileOpts {
@@ -110,6 +111,7 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
   sync(false)
 
   const head = el.querySelector<SVGGElement>('.stage svg > g')!
+  mountLight(el.querySelector<HTMLElement>('.stage')!)
 
   return {
     el,
