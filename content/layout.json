@@ -1,112 +1,163 @@
 {
   "sections": {
-    "projects": {
+    "research": {
       "nodes": [
         {
           "id": "tinygrad-ngp",
           "pos": [
-            4.052,
-            1.305,
-            0.703
+            7.56,
+            -2.616,
+            0.0
+          ],
+          "cluster": null
+        },
+        {
+          "id": "ecog-joystick",
+          "pos": [
+            -6.547,
+            -4.053,
+            -0.0
+          ],
+          "cluster": null
+        },
+        {
+          "id": "nerf-study",
+          "pos": [
+            -1.013,
+            6.669,
+            0.0
+          ],
+          "cluster": null
+        }
+      ],
+      "clusters": [],
+      "tour": [
+        "nerf-study",
+        "ecog-joystick",
+        "tinygrad-ngp"
+      ],
+      "edges": [
+        [
+          "ecog-joystick",
+          "nerf-study"
+        ],
+        [
+          "ecog-joystick",
+          "tinygrad-ngp"
+        ],
+        [
+          "nerf-study",
+          "tinygrad-ngp"
+        ]
+      ]
+    },
+    "projects": {
+      "nodes": [
+        {
+          "id": "flowstate",
+          "pos": [
+            -2.846,
+            2.119,
+            6.617
           ],
           "cluster": 0
         },
         {
-          "id": "flowstate",
-          "pos": [
-            -2.35,
-            3.988,
-            -5.117
-          ],
-          "cluster": 1
-        },
-        {
           "id": "mtg-vector-math",
           "pos": [
-            3.88,
-            -3.656,
-            2.314
+            5.159,
+            0.507,
+            -2.555
           ],
           "cluster": 0
         },
         {
           "id": "mtg-oracle",
           "pos": [
-            -0.288,
-            -0.756,
-            5.708
+            1.548,
+            3.375,
+            -4.944
           ],
           "cluster": 0
         },
         {
           "id": "chess-vis",
           "pos": [
-            3.362,
-            -0.369,
-            6.263
+            3.433,
+            5.633,
+            -2.854
           ],
           "cluster": 0
         },
         {
           "id": "freaqy",
           "pos": [
-            -1.493,
-            -5.177,
-            2.097
+            -0.294,
+            -1.807,
+            -3.495
           ],
           "cluster": 0
         },
         {
           "id": "therapt",
           "pos": [
-            1.635,
-            0.807,
-            -5.51
+            -0.369,
+            -1.133,
+            4.665
           ],
-          "cluster": 2
+          "cluster": 0
         },
         {
           "id": "powerslides",
           "pos": [
-            -3.57,
-            4.013,
-            3.179
+            -2.348,
+            4.697,
+            -0.53
           ],
-          "cluster": 1
+          "cluster": 0
         },
         {
           "id": "autoapply",
           "pos": [
-            -6.352,
-            2.452,
-            1.208
+            -5.847,
+            -0.666,
+            -1.495
           ],
           "cluster": 1
         },
         {
           "id": "camper-registry",
           "pos": [
-            2.876,
-            -4.64,
-            -2.066
+            5.639,
+            -2.308,
+            0.247
           ],
           "cluster": 0
         },
         {
           "id": "lumii",
           "pos": [
-            0.719,
-            4.007,
-            -6.887
+            -2.718,
+            -1.836,
+            7.297
           ],
-          "cluster": 2
+          "cluster": 0
         },
         {
           "id": "pmsi",
           "pos": [
-            -2.471,
-            -1.973,
-            -1.893
+            2.785,
+            -4.787,
+            -3.419
+          ],
+          "cluster": 0
+        },
+        {
+          "id": "imc-prosperity",
+          "pos": [
+            -4.14,
+            -3.792,
+            0.466
           ],
           "cluster": 0
         }
@@ -116,51 +167,41 @@
           "id": 0,
           "label": "Models & math",
           "centroid": [
-            1.417,
-            -2.181,
-            1.875
+            0.532,
+            0.061,
+            0.136
           ],
-          "radius": 5.918
+          "radius": 8.589
         },
         {
           "id": 1,
           "label": "Signals & automation",
           "centroid": [
-            -4.091,
-            3.484,
-            -0.243
+            -5.847,
+            -0.666,
+            -1.495
           ],
-          "radius": 5.7
-        },
-        {
-          "id": 2,
-          "label": "Conversational AI",
-          "centroid": [
-            1.177,
-            2.407,
-            -6.198
-          ],
-          "radius": 2.301
+          "radius": 0.5
         }
       ],
       "tour": [
-        "pmsi",
         "freaqy",
-        "mtg-vector-math",
+        "pmsi",
         "camper-registry",
-        "therapt",
-        "lumii",
-        "flowstate",
-        "autoapply",
-        "powerslides",
+        "mtg-vector-math",
         "mtg-oracle",
         "chess-vis",
-        "tinygrad-ngp"
+        "powerslides",
+        "autoapply",
+        "imc-prosperity",
+        "therapt",
+        "lumii",
+        "flowstate"
       ],
       "edges": [
         [
           "autoapply",
-          "freaqy"
+          "imc-prosperity"
         ],
         [
           "autoapply",
@@ -192,7 +233,7 @@
         ],
         [
           "freaqy",
-          "mtg-oracle"
+          "imc-prosperity"
         ],
         [
           "freaqy",
@@ -204,6 +245,10 @@
         ],
         [
           "freaqy",
+          "therapt"
+        ],
+        [
+          "imc-prosperity",
           "therapt"
         ],
         [
@@ -217,22 +262,14 @@
         [
           "mtg-oracle",
           "mtg-vector-math"
+        ],
+        [
+          "mtg-oracle",
+          "pmsi"
         ],
         [
           "mtg-oracle",
           "powerslides"
-        ],
-        [
-          "mtg-oracle",
-          "tinygrad-ngp"
-        ],
-        [
-          "mtg-vector-math",
-          "tinygrad-ngp"
-        ],
-        [
-          "pmsi",
-          "tinygrad-ngp"
         ],
         [
           "powerslides",
@@ -362,57 +399,6 @@
         ]
       ]
     },
-    "research": {
-      "nodes": [
-        {
-          "id": "ecog-joystick",
-          "pos": [
-            -0.075,
-            6.677,
-            -0.0
-          ],
-          "cluster": null
-        },
-        {
-          "id": "nerf-study",
-          "pos": [
-            7.294,
-            -3.287,
-            0.0
-          ],
-          "cluster": null
-        },
-        {
-          "id": "neuromatch-program",
-          "pos": [
-            -7.219,
-            -3.39,
-            0.0
-          ],
-          "cluster": null
-        }
-      ],
-      "clusters": [],
-      "tour": [
-        "ecog-joystick",
-        "neuromatch-program",
-        "nerf-study"
-      ],
-      "edges": [
-        [
-          "ecog-joystick",
-          "nerf-study"
-        ],
-        [
-          "ecog-joystick",
-          "neuromatch-program"
-        ],
-        [
-          "nerf-study",
-          "neuromatch-program"
-        ]
-      ]
-    },
     "worlds": {
       "nodes": [
         {
@@ -469,62 +455,62 @@
         {
           "id": "skills",
           "pos": [
-            0.537,
-            -0.672,
-            5.939
-          ],
-          "cluster": null
-        },
-        {
-          "id": "imc-prosperity",
-          "pos": [
-            5.675,
-            4.409,
-            -1.881
+            -0.812,
+            5.03,
+            4.317
           ],
           "cluster": null
         },
         {
           "id": "utd-bs-cs",
           "pos": [
-            1.338,
-            -5.949,
-            -2.605
+            2.852,
+            2.958,
+            -5.173
+          ],
+          "cluster": null
+        },
+        {
+          "id": "neuromatch-program",
+          "pos": [
+            5.294,
+            -4.983,
+            1.943
           ],
           "cluster": null
         },
         {
           "id": "languages",
           "pos": [
-            -7.549,
-            2.212,
-            -1.453
+            -7.334,
+            -3.004,
+            -1.087
           ],
           "cluster": null
         }
       ],
       "clusters": [],
       "tour": [
-        "skills",
         "utd-bs-cs",
-        "imc-prosperity",
-        "languages"
+        "skills",
+        "languages",
+        "neuromatch-program"
       ],
       "edges": [
         [
-          "imc-prosperity",
+          "languages",
           "skills"
         ],
         [
-          "imc-prosperity",
+          "languages",
           "utd-bs-cs"
         ],
         [
-          "languages",
+          "neuromatch-program",
           "skills"
         ],
         [
-          "languages",
+          "neuromatch-program",
           "utd-bs-cs"
         ],
         [
