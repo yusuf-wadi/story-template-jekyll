@@ -543,7 +543,12 @@
         "computer science",
         "UTD"
       ],
-      "links": [],
+      "links": [
+        {
+          "label": "Verify diploma",
+          "url": "https://www.michaelsutter.com/ediploma?fn=diplomastatuscheck&key=0200000001abb45725c03d8c17cf294ef84178345d4ef07aec4445c907f0b040d4c8ab96f415d2fe5ad70c473121247e2efc1b3b0cbcea4e864ca8b547084996fd1e9d7b"
+        }
+      ],
       "status": null
     },
     {
@@ -559,7 +564,12 @@
         "certificate",
         "Neuromatch"
       ],
-      "links": [],
+      "links": [
+        {
+          "label": "Certificate",
+          "url": "https://portal.neuromatchacademy.org/certificate/8b64868c-a793-4d9f-a5e4-2be51adbe844"
+        }
+      ],
       "status": null
     },
     {
