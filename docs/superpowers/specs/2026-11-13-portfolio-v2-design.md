@@ -60,10 +60,11 @@ nodes of that section's 3D map. About 1.2 s, eased. Reduced-motion users get a f
 
 ### 6. Easter egg — the circuit closes
 When all five regions are complete, the pads connect across region borders, current visibly flows through the
-whole head, and the profile "boots": the traces pulse in a spike pattern, and a single neuron grows out of the
-brainstem as a fractal dendrite (the Dendrite prototype from the direction board). Clicking its soma unlocks a
-hidden sixth node: a personal note from Yusuf plus a teaser for whatever he's researching now (wording is his).
-A "rewire" button resets progress.
+whole head, and the profile "boots": the traces pulse in a spike pattern. Then new glowing traces route
+themselves out of the head and across the black background, drawing in one by one. Each trace ends in a
+terminal pad. Clicking a pad opens a short card about **what he's working on now or what's coming up** (one card
+per trace). These items live in `content.json` under a `next` section (`now` / `upcoming` status), and he writes
+the wording. A "rewire" button resets progress.
 
 ### 7. Escape hatches
 - `#list` route: a fast, accessible plain list of everything (sections → items), linkable, readable by recruiters
