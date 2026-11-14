@@ -112,7 +112,7 @@ Any note in `~/life/writing/blog/` is published; `~/life/writing/` itself stays 
 npm run publish-notes -- --push     # or just ask Claude
 ```
 
-Vercel deploys the pushed commit. Moving the note out of `blog/` unpublishes it on the next run. Front matter is
+It pushes to the production branch `wadi_site` (override with `PUBLISH_BRANCH`) and Vercel deploys it. A launchd job runs it hourly from a clean clone at `~/.life-agent/portfolio-publish`. Moving the note out of `blog/` unpublishes it on the next run. Front matter is
 optional: the title is the filename, the date is the day it was first published (kept in
 `content/writing/.manifest.json`), and the summary is the first paragraph; `title`, `date`, `summary` in the note
 override these, and `draft: true` keeps it out. `[[wikilinks]]` link to other published notes (otherwise they

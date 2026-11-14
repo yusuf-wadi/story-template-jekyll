@@ -267,12 +267,14 @@ function git(repo: string, args: string[]) {
   return r.stdout
 }
 
+const PUBLISH_BRANCH = process.env.PUBLISH_BRANCH || 'wadi_site'
+
 export function pushChanges(repo: string, n: number): boolean {
   const paths = ['content/writing', 'public/writing/media', 'content/writing/.manifest.json'].filter(p => existsSync(join(repo, p)))
   git(repo, ['add', '--', ...paths])
   if (spawnSync('git', ['diff', '--cached', '--quiet', '--', ...paths], { cwd: repo }).status === 0) return false
   git(repo, ['commit', '-m', `post: sync from Obsidian (${n} changed)\n\n${TRAILER}`, '--', ...paths])
-  git(repo, ['push', 'origin', 'v2'])
+  git(repo, ['push', 'origin', `HEAD:${PUBLISH_BRANCH}`])
   return true
 }
 
@@ -285,6 +287,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(`publish-notes: ${r.published.length} published (${r.added.length} new, ${r.updated.length} updated), ${r.removed.length} removed, ${r.skipped.length} skipped; src ${src}${existsSync(src) && statSync(src).isDirectory() ? '' : ' (missing)'}`)
   if (process.argv.includes('--push')) {
     if (r.changed === 0) console.log('nothing changed; not pushing')
-    else console.log(pushChanges(repo, r.changed) ? `pushed ${r.changed} change(s) to origin v2` : 'nothing to commit')
+    else console.log(pushChanges(repo, r.changed) ? `pushed ${r.changed} change(s) to origin ${PUBLISH_BRANCH}` : 'nothing to commit')
   }
 }
