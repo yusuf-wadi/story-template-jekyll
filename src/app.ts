@@ -6,6 +6,7 @@ import { generatePcb, seedFor } from './profile/pcb'
 import { createSectionScene } from './map/sectionScene'
 import { mountReader } from './reader/reader'
 import { step } from './tour'
+import { playEgg } from './egg/egg'
 
 export function startApp(root: HTMLElement, content: Content, layout: Layout, progress: Progress): void {
   // Navigate and render synchronously so rapid input (click then key) never sees a stale route.
@@ -58,6 +59,29 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     go('')
   })
   progress.onChange(() => scene.refresh())
+
+  // Easter egg: once every lobe is a full PCB the circuit closes. Plays animated once; later loads show it settled.
+  const regionItemIds = content.sections.filter((s) => s.region)
+    .map((s) => content.items.filter((i) => i.section === s.id).map((i) => i.id))
+  const nextItems = content.items.filter((i) => i.section === 'next')
+  let egg: { reset(): void } | null = null
+  let eggPending = false
+  const maybeEgg = async () => {
+    if (egg || eggPending || profile.isHidden() || !progress.areAllComplete(regionItemIds)) return
+    eggPending = true
+    try {
+      const wired = await profile.whenWired()
+      if (!wired || egg || profile.isHidden() || !progress.areAllComplete(regionItemIds)) return
+      egg = playEgg(profile.el, profile, nextItems, !progress.isEggSeen(), () => progress.reset())
+      progress.markEggSeen()
+    } finally {
+      eggPending = false
+    }
+  }
+  progress.onChange(() => {
+    if (egg && !progress.areAllComplete(regionItemIds)) { egg.reset(); egg = null }
+    void maybeEgg()
+  })
   if (import.meta.env.DEV || location.search.includes('e2e')) {
     const w = window as unknown as { __cm?: object }
     w.__cm = Object.assign(w.__cm ?? {}, { visit: (id: string) => progress.visit(id), generatePcb, seedFor })
@@ -95,6 +119,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
     if (route.view === 'profile') {
       placeholder.hidden = true
       profile.show()
+      void maybeEgg()
       return
     }
     profile.hide()

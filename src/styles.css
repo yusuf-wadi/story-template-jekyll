@@ -72,3 +72,50 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 @media (prefers-reduced-motion: reduce) {
   .pcb-pin, .pcb-edge-copper, .region.is-pcb { transition: none; }
 }
+/* ---- easter egg: the circuit closes, an eye opens */
+.egg-board { pointer-events: none; }
+.egg-link-glow, .egg-trace-glow { fill: none; stroke: var(--copper-hi); stroke-opacity: .35; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; filter: blur(2px); }
+.egg-link-copper, .egg-trace-copper { fill: none; stroke: #e8b360; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.egg-trace-pad { fill: var(--copper-hi); filter: drop-shadow(0 0 2px var(--copper-hi)); }
+.egg-link:not(.is-on), .egg-trace:not(.is-on) { opacity: 0; }
+.egg-spike { fill: none; stroke: #fff4d6; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1.6 5 1.6 30; filter: drop-shadow(0 0 2px var(--copper-hi)); }
+.is-booted .pcb-chip { stroke: var(--copper-hi); stroke-opacity: .55; transition: stroke .8s, stroke-opacity .8s; }
+.egg-eye-halo { fill: var(--copper-hi); opacity: 0; filter: blur(9px); }
+.egg-eye-white { fill: #120d06; }
+.egg-eye-irisdisc { fill: var(--copper); }
+.egg-eye-pupil { fill: #050605; }
+.egg-eye-glint { fill: #fff8e6; }
+.egg-eye-rim { fill: none; stroke: var(--copper-hi); stroke-width: 1.6; stroke-linejoin: round; }
+.egg-eye-closed { fill: none; stroke: var(--copper); stroke-opacity: .7; stroke-width: 1.6; stroke-linecap: round; }
+.egg-eye:not(.is-open) .egg-eye-lids, .egg-eye:not(.is-open) .egg-eye-halo { opacity: 0; }
+.egg-eye.is-open .egg-eye-closed { opacity: 0; }
+.egg-eye.is-open .egg-eye-halo { opacity: .7; animation: egg-glow 4.2s ease-in-out infinite; }
+.egg-eye.is-open .egg-eye-irisdisc { animation: egg-iris 4.2s ease-in-out infinite; }
+@keyframes egg-glow { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
+@keyframes egg-iris { 0%, 100% { fill: var(--copper); } 50% { fill: var(--copper-hi); } }
+.egg-eye-btn { position: absolute; width: max(36px, var(--eye-w, 40px)); aspect-ratio: 1.6; transform: translate(-50%, -50%); padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; z-index: 2; }
+.egg-eye-btn:focus { outline: none; }
+.egg-eye-btn:focus-visible { outline: 2px solid var(--copper-hi); outline-offset: 3px; }
+.egg-rewire { position: absolute; right: 24px; bottom: 20px; background: none; border: 1px solid rgba(217,162,78,.45); border-radius: 999px; padding: 4px 12px; color: var(--copper); font: 500 .72rem/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; cursor: pointer; }
+.egg-rewire:hover, .egg-rewire:focus-visible { border-color: var(--copper-hi); color: var(--copper-hi); outline: none; }
+.egg-card { position: absolute; z-index: 5; box-sizing: border-box; overflow: auto; padding: 14px 20px 20px; background: #06120c; border: 1px solid rgba(217,162,78,.5); border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 12px 40px rgba(0,0,0,.6), 0 0 28px rgba(255,216,138,.08); scrollbar-width: thin; }
+.egg-card-bar { display: flex; align-items: center; gap: 10px; font: 500 .66rem/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; }
+.egg-card-kicker { color: var(--copper); opacity: .8; flex: 1; }
+.egg-close { background: none; border: 0; color: var(--fg); opacity: .6; font-size: 1.15rem; line-height: 1; cursor: pointer; padding: 2px 4px; }
+.egg-close:hover, .egg-close:focus-visible { opacity: 1; outline: 1px solid var(--copper-hi); }
+.egg-card h2 { margin: 12px 0 2px; font-size: 1.15rem; font-weight: 500; line-height: 1.3; outline: none; }
+.egg-group h3 { margin: 16px 0 6px; font: 500 .68rem/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--copper-hi); display: flex; align-items: center; gap: 8px; }
+.egg-group h3::after { content: ""; flex: 1; height: 1px; background: rgba(217,162,78,.3); }
+.egg-group.is-now h3::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--copper-hi); box-shadow: 0 0 6px var(--copper-hi); }
+.egg-group ul { list-style: none; margin: 0; padding: 0; }
+.egg-item + .egg-item { margin-top: 12px; }
+.egg-item h4 { margin: 0; font-size: .95rem; font-weight: 500; }
+.egg-item-dates { margin: 2px 0 0; font-size: .75rem; opacity: .5; }
+.egg-item-body { font-size: .86rem; line-height: 1.55; opacity: .85; }
+.egg-item-body p { margin: 4px 0 0; }
+.egg-item-body a, .egg-item-links a { color: var(--copper-hi); }
+.egg-item-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; margin: 6px 0 0; }
+@media (prefers-reduced-motion: reduce) {
+  .egg-eye.is-open .egg-eye-halo, .egg-eye.is-open .egg-eye-irisdisc { animation: none; }
+  .is-booted .pcb-chip { transition: none; }
+}

@@ -61,19 +61,23 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
     g.classList.toggle('is-pcb', still)
   }
 
+  // The latest sync's trace work; `whenWired` waits for it to settle.
+  let pending: Promise<unknown> = Promise.resolve()
   const sync = (animate: boolean) => {
     let n = 0
     for (const s of mapped) if (isDone(s.id)) n++
     readout.textContent = `${n} / ${mapped.length} regions wired`
     if (el.hidden) return
+    const work: Promise<void>[] = []
     for (const s of mapped) {
       const region = s.region!
       if (!pcbFor(region)) continue
       const visited = new Set(itemIds(s.id).filter((id) => progress.isVisited(id)))
       const fresh = new Set(animate ? [...visited].filter((id) => !drawn.has(id)) : [])
-      for (const id of visited) drawn.add(id)
-      void setProgress(region, visited, fresh)
+      for (const id of itemIds(s.id)) if (visited.has(id)) drawn.add(id); else drawn.delete(id)
+      work.push(setProgress(region, visited, fresh))
     }
+    pending = Promise.all(work)
   }
 
   for (const s of mapped) {
@@ -105,7 +109,19 @@ export function mountProfile(root: HTMLElement, opts: ProfileOpts) {
   root.append(el)
   sync(false)
 
+  const head = el.querySelector<SVGGElement>('.stage svg > g')!
+
   return {
+    el,
+    /** The head `<g>`: source coordinates shared by region outlines, PCBs and edge pads. */
+    head,
+    isHidden: () => el.hidden,
+    /** Resolves once pending trace animations have landed: true if every mapped region is a full PCB. */
+    async whenWired(): Promise<boolean> {
+      let p: Promise<unknown>
+      do { p = pending; await p } while (p !== pending)
+      return !el.hidden && mapped.every((s) => paths.get(s.region!)?.classList.contains('is-pcb'))
+    },
     show() { if (el.hidden) { el.hidden = false; sync(true) } },
     hide() { el.hidden = true },
     setProgress,

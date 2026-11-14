@@ -3,6 +3,8 @@ type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 export class Progress {
   private visited = new Set<string>()
   private listeners = new Set<() => void>()
+  private eggSeen = false
+  private eggKey = 'cm-egg-seen-v1'
 
   constructor(private storage: Store | null, private key = 'cm-progress-v1') {
     try {
@@ -13,6 +15,25 @@ export class Progress {
       }
     } catch {
       // unreadable or corrupt storage: start empty
+    }
+    try {
+      this.eggSeen = storage?.getItem(this.eggKey) === '1'
+    } catch {
+      // unreadable storage: the egg plays again, harmlessly
+    }
+  }
+
+  /** Whether the completed-circuit sequence has already played (later loads show its final state). */
+  isEggSeen(): boolean {
+    return this.eggSeen
+  }
+
+  markEggSeen(): void {
+    this.eggSeen = true
+    try {
+      this.storage?.setItem(this.eggKey, '1')
+    } catch {
+      // storage unavailable: remembered for this session only
     }
   }
 
@@ -37,8 +58,10 @@ export class Progress {
 
   reset(): void {
     this.visited.clear()
+    this.eggSeen = false
     try {
       this.storage?.removeItem(this.key)
+      this.storage?.removeItem(this.eggKey)
     } catch {
       // storage unavailable: memory state still cleared
     }
