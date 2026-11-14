@@ -26,6 +26,7 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   const sceneHost = document.createElement('div')
   sceneHost.className = 'scene-host'
   sceneHost.hidden = true
+  sceneHost.tabIndex = -1 // focus returns here when a card closes
   const hoverLabel = document.createElement('div')
   hoverLabel.className = 'hover-label'
   hoverLabel.dataset.hoverLabel = ''
@@ -37,7 +38,10 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
   })
   let currentSection: SectionId | null = null
   let currentRoute: Route = parseRoute(location.hash, content)
-  const reader = mountReader(root)
+  const reader = mountReader(root, {
+    track: (id) => scene.nodeAnchor(id),
+    returnFocus: () => (sceneHost.hidden ? null : sceneHost),
+  })
   reader.onNav((dir) => {
     if (currentRoute.view !== 'item') return
     const next = step(layout.sections[currentRoute.section].tour, currentRoute.item, dir)
@@ -79,8 +83,10 @@ export function startApp(root: HTMLElement, content: Content, layout: Layout, pr
       if (route.view === 'item') {
         const tour = layout.sections[route.section].tour
         const item = content.items.find((i) => i.id === route.item)!
-        reader.open(item, { index: Math.max(0, tour.indexOf(route.item)), total: tour.length })
+        // Focus first: under reduced motion it jumps, and the card is placed against the final camera.
         void scene.focus(route.item)
+        reader.open(item, { index: Math.max(0, tour.indexOf(route.item)), total: tour.length },
+          scene.nodeAnchor(route.item) ?? undefined)
       } else void scene.focus(null)
       return
     }

@@ -69,10 +69,14 @@ test('browser back from item returns to section', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('mobile: reader is a bottom sheet; screenshot', async ({ page }) => {
+test('mobile: the card settles as a bottom sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 })
   await page.goto(`/?e2e#projects/${tour[0]}`)
-  const box = await page.getByRole('dialog').boundingBox()
-  expect(box!.y).toBeGreaterThan(100)
-  expect(box!.width).toBeGreaterThan(380)
+  const dlg = page.getByRole('dialog')
+  await expect(dlg).toBeVisible()
+  // the card grows out of the node first, then settles at the bottom, full width
+  await expect.poll(async () => { const b = (await dlg.boundingBox())!; return b.y + b.height }).toBeCloseTo(800, 0)
+  const box = (await dlg.boundingBox())!
+  expect(box.y).toBeGreaterThan(100)
+  expect(box.width).toBeGreaterThan(380)
 })

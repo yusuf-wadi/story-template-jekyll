@@ -20,6 +20,8 @@ export interface GraphView {
   setFocus(id: string | null): void
   refresh(isVisited: (id: string) => boolean): void
   brightness(id: string): number | null
+  /** The node's cluster hue as #rrggbb. */
+  colorOf(id: string): string | null
   dispose(): void
 }
 
@@ -128,6 +130,7 @@ export function createGraphView(layout: SectionLayout): GraphView {
     setFocus(id) { focus = id && meshes.has(id) ? id : null },
     refresh(isVisited) { for (const [id, s] of state) s.bright = isVisited(id) ? 1 : UNVISITED },
     brightness(id) { return state.get(id)?.bright ?? null },
+    colorOf(id) { const c = hue.get(id); return c ? `#${c.getHexString()}` : null },
     dispose() {
       for (const m of meshes.values()) {
         ;(m.material as THREE.Material).dispose()

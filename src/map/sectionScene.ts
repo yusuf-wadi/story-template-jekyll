@@ -5,6 +5,7 @@ import { createClusterFields, type ClusterFields } from './clusterFields'
 import { createForceSim, type ForceSim } from './forceSim'
 import { createGraphView, type GraphView } from './graphView'
 import { createLabels } from './labels'
+import { GAP, CARD_MAX_W, SHEET_H, NARROW } from '../reader/card'
 
 export interface SectionScene {
   enter(section: SectionId, layout: SectionLayout, items: Item[]): Promise<void>
@@ -14,6 +15,8 @@ export interface SectionScene {
   onHover(fn: (label: string | null) => void): void
   refresh(): void
   cancelTransitions(): void
+  /** CSS-px centre, on-screen radius and hue of a node at its current sim position (null when not shown). */
+  nodeAnchor(id: string): { x: number; y: number; r: number; color: string } | null
   dispose(): void
 }
 
@@ -47,10 +50,15 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   let hoverFn: (label: string | null) => void = () => {}
   let lastLabel: string | null = null
   let hoverId: string | null = null
+  /** The open node: stays lit (rest of the graph dimmed) whenever nothing is hovered. */
+  let selected: string | null = null
   let interacted = false
   let raf = 0
   let running = false
-  let focusTween: { from: THREE.Vector3; to: THREE.Vector3; t: number } | null = null
+  type Shift = { x: number; y: number }
+  let focusTween: { from: THREE.Vector3; to: THREE.Vector3; s0: Shift; s1: Shift; t: number } | null = null
+  /** Screen-space framing (px): moves the focused node off-centre so it and its card read as one composition. */
+  let shift: Shift = { x: 0, y: 0 }
   const raycaster = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
   const v = new THREE.Vector3()
@@ -64,7 +72,22 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     const h = host.clientHeight || window.innerHeight
     renderer.setSize(w, h)
     camera.aspect = w / h
+    applyShift()
+  }
+  function applyShift() {
+    const w = host.clientWidth || window.innerWidth
+    const h = host.clientHeight || window.innerHeight
+    if (Math.abs(shift.x) < 0.5 && Math.abs(shift.y) < 0.5) camera.clearViewOffset()
+    else camera.setViewOffset(w, h, shift.x, shift.y, w, h)
     camera.updateProjectionMatrix()
+  }
+  /** Where the open node should sit: left of centre by half a card (desktop), or centred above the sheet (narrow). */
+  function framing(open: boolean): Shift {
+    const w = host.clientWidth || window.innerWidth
+    const h = host.clientHeight || window.innerHeight
+    if (!open) return { x: 0, y: 0 }
+    if (w <= NARROW) return { x: 0, y: (h * SHEET_H) / 2 }
+    return w >= 2 * (CARD_MAX_W + GAP) + 64 ? { x: (CARD_MAX_W + GAP) / 2, y: 0 } : { x: 0, y: 0 }
   }
   window.addEventListener('resize', resize)
 
@@ -76,12 +99,13 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
   function setHoverNode(id: string | null) {
     if (id === hoverId) return
     hoverId = id
-    view?.setFocus(id)
+    view?.setFocus(id ?? selected)
     awake = true
   }
   function screenPos(id: string): { x: number; y: number } | null {
     const p = sim?.positions.get(id)
     if (!p) return null
+    camera.updateMatrixWorld()
     v.copy(p).project(camera)
     const r = el.getBoundingClientRect()
     return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height }
@@ -177,6 +201,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     if (fields) { scene.remove(fields.group); fields.dispose(); fields = null }
     sim = null
     hoverId = null
+    selected = null
     labels.clear()
   }
 
@@ -187,10 +212,15 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     }
     if (focusTween) {
       focusTween.t = Math.min(1, focusTween.t + dt / 0.8)
-      controls.target.lerpVectors(focusTween.from, focusTween.to, focusTween.t)
+      const t = focusTween.t
+      const k = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2 // ease in-out cubic
+      controls.target.lerpVectors(focusTween.from, focusTween.to, k)
+      const { s0, s1 } = focusTween
+      shift = { x: s0.x + (s1.x - s0.x) * k, y: s0.y + (s1.y - s0.y) * k }
+      applyShift()
       if (focusTween.t >= 1) focusTween = null
     }
-    controls.autoRotate = !reduced && !interacted && hoverId === null
+    controls.autoRotate = !reduced && !interacted && hoverId === null && selected === null
     controls.update()
     if (sim && view) {
       view.sync(sim.positions, reduced ? Infinity : dt)
@@ -232,7 +262,9 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
       controls.target.set(0, 0, 0)
       camera.position.set(0, 4, 20)
       interacted = false
+      shift = { x: 0, y: 0 }
       resize()
+      controls.update() // orient the camera now so anchors read before the first frame are right
       lastLabel = null
       hoverFn(null)
       start()
@@ -245,12 +277,34 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     },
     async focus(id) {
       const p = id ? sim?.positions.get(id) : null
-      focusTween = { from: controls.target.clone(), to: p ? p.clone() : new THREE.Vector3(), t: 0 }
+      selected = p ? id : null
+      view?.setFocus(hoverId ?? selected)
+      awake = true
+      const to = p ? p.clone() : new THREE.Vector3()
+      const s1 = framing(!!p)
+      if (reduced) {
+        // Jump, don't tween: the card is placed once against the final camera.
+        focusTween = null
+        controls.target.copy(to)
+        shift = s1
+        applyShift()
+        controls.update()
+        return
+      }
+      focusTween = { from: controls.target.clone(), to, s0: { ...shift }, s1, t: 0 }
     },
     onNodeClick(fn) { clickFn = fn },
     onHover(fn) { hoverFn = fn },
     refresh() { view?.refresh(isVisited) },
     cancelTransitions() { focusTween = null },
+    nodeAnchor(id) {
+      const m = view?.meshes.get(id)
+      const s = screenPos(id)
+      if (!m || !s || host.hidden) return null
+      const pxPerUnit = el.getBoundingClientRect().height / (2 * Math.tan((camera.fov * Math.PI) / 360))
+      const r = (m.scale.x * pxPerUnit) / Math.max(1e-3, camera.position.distanceTo(sim!.positions.get(id)!))
+      return { x: s.x, y: s.y, r, color: view!.colorOf(id)! }
+    },
     dispose() {
       stop()
       window.removeEventListener('resize', resize)
@@ -267,6 +321,7 @@ export function createSectionScene(host: HTMLElement, isVisited: (id: string) =>
     ;(window as unknown as { __cm: unknown }).__cm = {
       nodeBrightness: (id: string) => view?.brightness(id) ?? null,
       nodeScreenPos: (id: string) => screenPos(id),
+      nodeAnchor: (id: string) => api.nodeAnchor(id),
       edges: () => view?.edges.map((e) => [...e]) ?? [],
       labelText: (id: string) => host.querySelector<HTMLElement>(`[data-node-label="${CSS.escape(id)}"]`)?.textContent ?? null,
     }
