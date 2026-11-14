@@ -3,7 +3,13 @@ import type { SectionLayout } from '../types'
 
 type Cluster = SectionLayout['clusters'][number]
 
-const PALETTE = [0x6aa5ff, 0xff8a65, 0x7fe3a6, 0xd39bff, 0xffd166]
+/** Obsidian-style "groups": restrained hues that read on black without going neon. */
+const PALETTE = [0x86a8d8, 0xd9a47e, 0x8fc4a4, 0xbfa2d6]
+/** Single hue for sections without clusters: a cool neutral. */
+export const NEUTRAL = 0xb4bfcc
+export const clusterColor = (id: number): number => PALETTE[id % PALETTE.length]
+const REST = 0.1
+const HOT = 0.22
 
 function glowTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
@@ -33,9 +39,9 @@ export function createClusterFields(clusters: Cluster[]): ClusterFields {
   for (const c of clusters) {
     const mat = new THREE.SpriteMaterial({
       map: tex,
-      color: PALETTE[c.id % PALETTE.length],
+      color: clusterColor(c.id),
       transparent: true,
-      opacity: 0.35,
+      opacity: REST,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     })
@@ -60,7 +66,7 @@ export function createClusterFields(clusters: Cluster[]): ClusterFields {
       return best
     },
     setHighlight(c) {
-      for (const [id, s] of sprites) (s.material as THREE.SpriteMaterial).opacity = c && c.id === id ? 0.6 : 0.35
+      for (const [id, s] of sprites) (s.material as THREE.SpriteMaterial).opacity = c && c.id === id ? HOT : REST
     },
     dispose() {
       for (const s of sprites.values()) s.material.dispose()

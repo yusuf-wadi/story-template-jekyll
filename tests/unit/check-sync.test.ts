@@ -7,7 +7,7 @@ const item = (id: string, section: string) => ({ id, section, title: id, dates: 
 const mk = (): [Content, Layout] => {
   const content = { person: {}, sections: [], clusterLabelOverrides: {},
     items: [item('seeloz', 'work'), item('monoware', 'work'), item('nx', 'next')] } as unknown as Content
-  const sec = (ids: string[]) => ({ nodes: ids.map(id => ({ id, pos: [0, 0, 0], cluster: null })), clusters: [], tour: ids })
+  const sec = (ids: string[]) => ({ nodes: ids.map(id => ({ id, pos: [0, 0, 0], cluster: null })), clusters: [], tour: ids, edges: [] as [string, string][] })
   const layout = { sections: { work: sec(['seeloz', 'monoware']) } } as unknown as Layout
   return [content, layout]
 }
@@ -26,6 +26,11 @@ describe('checkSync', () => {
     const [c, l] = mk()
     l.sections.work.nodes.push({ id: 'ghost', pos: [0, 0, 0], cluster: null })
     expect(checkSync(c, l)).toEqual(['work: extra in layout: ghost'])
+  })
+  it('reports an edge referencing an unknown id', () => {
+    const [c, l] = mk()
+    l.sections.work.edges = [['monoware', 'seeloz'], ['ghost', 'seeloz']]
+    expect(checkSync(c, l)).toEqual(['work: edge references unknown id: ghost'])
   })
   it('real files are in sync', () => {
     const c = JSON.parse(readFileSync('content/content.json', 'utf8'))

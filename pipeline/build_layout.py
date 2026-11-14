@@ -121,6 +121,22 @@ def nn_tour(pos, ids):
     return [ids[i] for i in tour]
 
 
+def knn_edges(emb, ids, k=2):
+    """Each node's k most cosine-similar others, as an undirected, deduplicated, sorted edge list."""
+    n = len(ids)
+    if n < 2:
+        return []
+    x = _unit(emb)
+    sim = x @ x.T
+    np.fill_diagonal(sim, -np.inf)
+    out = set()
+    for i in range(n):
+        for j in np.argsort(-sim[i], kind="stable")[:min(k, n - 1)]:
+            a, b = sorted((ids[i], ids[int(j)]))
+            out.add((a, b))
+    return sorted(out)
+
+
 def _r3(a):
     return [round(float(v), 3) for v in a]
 
@@ -167,6 +183,7 @@ def build(content, seed=7):
                       for i, p, c in zip(ids, pos, node_cluster)],
             "clusters": clusters,
             "tour": nn_tour(np.round(pos, 3), ids),
+            "edges": [list(e) for e in knn_edges(emb, ids)],
         }
     return {"sections": sections}
 

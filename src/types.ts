@@ -28,5 +28,7 @@ export interface SectionLayout {
   nodes: { id: string; pos: [number, number, number]; cluster: number | null }[]
   clusters: { id: number; label: string; centroid: [number, number, number]; radius: number }[]
   tour: string[]
+  /** Undirected kNN (k=2, cosine) edges, each sorted [a, b] with a < b. */
+  edges: [string, string][]
 }
 export interface Layout { sections: Record<SectionId, SectionLayout> }

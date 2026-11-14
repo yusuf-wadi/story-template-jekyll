@@ -46,3 +46,6 @@ html, body { margin: 0; height: 100%; background: #000; color: var(--fg); font-f
 @media (max-width: 600px) {
   .reader { top: auto; left: 0; width: 100%; max-height: 62vh; border-left: 0; border-top: 1px solid rgba(255,255,255,.15); }
 }
+.node-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.node-label { position: absolute; left: 0; top: 0; margin: 5px 0 0 9px; font: 400 11.5px/1.2 system-ui, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: .01em; color: #c6cbd2; white-space: nowrap; text-shadow: 0 0 3px #000, 0 0 8px #000; transition: opacity .15s; will-change: transform, opacity; }
+@media (prefers-reduced-motion: reduce) { .node-label { transition: none; } }

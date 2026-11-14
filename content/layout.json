@@ -156,6 +156,88 @@
         "mtg-oracle",
         "chess-vis",
         "tinygrad-ngp"
+      ],
+      "edges": [
+        [
+          "autoapply",
+          "freaqy"
+        ],
+        [
+          "autoapply",
+          "powerslides"
+        ],
+        [
+          "camper-registry",
+          "mtg-vector-math"
+        ],
+        [
+          "camper-registry",
+          "pmsi"
+        ],
+        [
+          "chess-vis",
+          "mtg-oracle"
+        ],
+        [
+          "chess-vis",
+          "mtg-vector-math"
+        ],
+        [
+          "flowstate",
+          "powerslides"
+        ],
+        [
+          "flowstate",
+          "therapt"
+        ],
+        [
+          "freaqy",
+          "mtg-oracle"
+        ],
+        [
+          "freaqy",
+          "mtg-vector-math"
+        ],
+        [
+          "freaqy",
+          "pmsi"
+        ],
+        [
+          "freaqy",
+          "therapt"
+        ],
+        [
+          "lumii",
+          "pmsi"
+        ],
+        [
+          "lumii",
+          "therapt"
+        ],
+        [
+          "mtg-oracle",
+          "mtg-vector-math"
+        ],
+        [
+          "mtg-oracle",
+          "powerslides"
+        ],
+        [
+          "mtg-oracle",
+          "tinygrad-ngp"
+        ],
+        [
+          "mtg-vector-math",
+          "tinygrad-ngp"
+        ],
+        [
+          "pmsi",
+          "tinygrad-ngp"
+        ],
+        [
+          "powerslides",
+          "therapt"
+        ]
       ]
     },
     "work": {
@@ -244,6 +326,40 @@
         "toyota-competitive-analysis",
         "seeloz",
         "monoware"
+      ],
+      "edges": [
+        [
+          "monoware",
+          "seeloz"
+        ],
+        [
+          "monoware",
+          "toyota-apple-maps"
+        ],
+        [
+          "seeloz",
+          "toyota-apple-maps"
+        ],
+        [
+          "toyota-apple-maps",
+          "toyota-charging-data"
+        ],
+        [
+          "toyota-apple-maps",
+          "toyota-competitive-analysis"
+        ],
+        [
+          "toyota-apple-maps",
+          "toyota-hems"
+        ],
+        [
+          "toyota-charging-data",
+          "toyota-competitive-analysis"
+        ],
+        [
+          "toyota-charging-data",
+          "toyota-hems"
+        ]
       ]
     },
     "research": {
@@ -281,6 +397,20 @@
         "ecog-joystick",
         "neuromatch-program",
         "nerf-study"
+      ],
+      "edges": [
+        [
+          "ecog-joystick",
+          "nerf-study"
+        ],
+        [
+          "ecog-joystick",
+          "neuromatch-program"
+        ],
+        [
+          "nerf-study",
+          "neuromatch-program"
+        ]
       ]
     },
     "worlds": {
@@ -328,6 +458,28 @@
         "rarephish",
         "tiltshift",
         "vr-modding"
+      ],
+      "edges": [
+        [
+          "liminal-bevy",
+          "rarephish"
+        ],
+        [
+          "liminal-bevy",
+          "tiltshift"
+        ],
+        [
+          "liminal-bevy",
+          "vr-modding"
+        ],
+        [
+          "rarephish",
+          "tiltshift"
+        ],
+        [
+          "rarephish",
+          "vr-modding"
+        ]
       ]
     },
     "craft": {
@@ -375,6 +527,28 @@
         "utd-bs-cs",
         "imc-prosperity",
         "languages"
+      ],
+      "edges": [
+        [
+          "imc-prosperity",
+          "skills"
+        ],
+        [
+          "imc-prosperity",
+          "utd-bs-cs"
+        ],
+        [
+          "languages",
+          "skills"
+        ],
+        [
+          "languages",
+          "utd-bs-cs"
+        ],
+        [
+          "skills",
+          "utd-bs-cs"
+        ]
       ]
     }
   }

@@ -104,3 +104,32 @@ def test_override_label(content):
 
 def test_next_excluded(content):
     assert "next" not in bl.build(content, 7)["sections"]
+
+
+def test_knn_edges_dedup_sorted():
+    emb = np.array([[1.0, 0, 0], [0.9, 0.1, 0], [0, 0.3, 1.0]])
+    ids = ["z", "m", "a"]
+    # k=1: z<->m mutual, a's nearest is m
+    assert bl.knn_edges(emb, ids, k=1) == [("a", "m"), ("m", "z")]
+    assert bl.knn_edges(emb, ids) == [("a", "m"), ("a", "z"), ("m", "z")]
+
+
+def test_edges_present_all_sections(content):
+    out = bl.build(content, 7)["sections"]
+    for sec in out.values():
+        ids = {n["id"] for n in sec["nodes"]}
+        assert sec["edges"], "every multi-node section has edges"
+        for a, b in sec["edges"]:
+            assert a < b and a in ids and b in ids
+        assert sec["edges"] == sorted(sec["edges"])
+        deg = {i: 0 for i in ids}
+        for a, b in sec["edges"]:
+            deg[a] += 1
+            deg[b] += 1
+        assert min(deg.values()) >= 2
+
+
+def test_single_node_no_edges(content):
+    content["items"].append({"id": "solo", "section": "craft", "title": "nx", "dates": "",
+                             "summary": "s", "body": "b", "tags": [], "links": [], "status": None})
+    assert bl.build(content, 7)["sections"]["craft"]["edges"] == []

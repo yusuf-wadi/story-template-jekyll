@@ -9,11 +9,14 @@ export function checkSync(content: Content, layout: Layout): string[] {
   for (const s of Object.keys(layout.sections)) sections.add(s)
   for (const sec of sections) {
     const want = new Set(content.items.filter(i => i.section === sec).map(i => i.id))
-    const have = new Set((layout.sections as Record<string, { nodes: { id: string }[] }>)[sec]?.nodes.map(n => n.id) ?? [])
+    const lay = (layout.sections as Record<string, { nodes: { id: string }[]; edges?: [string, string][] }>)[sec]
+    const have = new Set(lay?.nodes.map(n => n.id) ?? [])
     const missing = [...want].filter(id => !have.has(id))
     const extra = [...have].filter(id => !want.has(id))
     if (missing.length) problems.push(`${sec}: missing in layout: ${missing.join(', ')}`)
     if (extra.length) problems.push(`${sec}: extra in layout: ${extra.join(', ')}`)
+    const unknown = [...new Set((lay?.edges ?? []).flat().filter(id => !have.has(id)))]
+    if (unknown.length) problems.push(`${sec}: edge references unknown id: ${unknown.join(', ')}`)
   }
   return problems
 }
